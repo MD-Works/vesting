@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Properties — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Properties</p>
+      <h1 class="page-header__title">Properties</h1>
+      <p class="page-header__subtitle">Sale and rental listings you manage.</p>
+      <div class="page-header__actions">
+        <a href="property-form.html" class="btn btn--gold">+ New Property</a>
+      </div>
+    </header>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input
+        type="search"
+        id="search-suburb"
+        class="search-input"
+        placeholder="Search address or suburb…"
+        autocomplete="off"
+      />
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="sale">For Sale</option>
+        <option value="rental">For Rent</option>
+        <option value="both">Sale &amp; Rent</option>
+      </select>
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="pending">Pending</option>
+        <option value="sold">Sold</option>
+        <option value="rented">Rented</option>
+        <option value="off-market">Off-market</option>
+      </select>
+      <button class="btn btn--ghost btn--sm" id="btn-clear-filters">Clear</button>
+    </div>
+
+    <!-- Count -->
+    <p class="text-sm text-muted mb-md" id="property-count"></p>
+
+    <!-- Grid -->
+    <div class="property-grid" id="property-grid"></div>
+
+    <!-- Empty state -->
+    <div id="properties-empty" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">⬡</span>
+        <p class="empty-state__message">No properties yet. Add your first listing to get started.</p>
+        <a href="property-form.html" class="btn btn--gold">Add First Property</a>
+      </div>
+    </div>
+
+    <!-- No results -->
+    <div id="properties-no-results" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">⬡</span>
+        <p class="empty-state__message">No properties match your search or filters.</p>
+        <button class="btn btn--ghost" id="btn-clear-filters-2">Clear filters</button>
+      </div>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  let allProperties = []
+  let filtered      = []
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+  async function loadProperties () {
+    allProperties = await Crypto.getAllDecrypted('properties')
+    allProperties.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    applyFilters()
+  }
+
+  // ── Filter ────────────────────────────────────────────────────────────────
+  function applyFilters () {
+    const q      = document.getElementById('search-suburb').value.trim().toLowerCase()
+    const type   = document.getElementById('filter-type').value
+    const status = document.getElementById('filter-status').value
+
+    filtered = allProperties.filter(p => {
+      if (type   && p.type   !== type)   return false
+      if (status && p.status !== status) return false
+      if (q) {
+        const hay = [p.address || '', p.suburb || '', p.city || ''].join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+
+    renderGrid()
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  async function renderGrid () {
+    const grid      = document.getElementById('property-grid')
+    const emptyEl   = document.getElementById('properties-empty')
+    const noResults = document.getElementById('properties-no-results')
+    const countEl   = document.getElementById('property-count')
+
+    grid.innerHTML = ''
+    emptyEl.classList.add('hidden')
+    noResults.classList.add('hidden')
+    grid.classList.remove('hidden')
+
+    if (allProperties.length === 0) {
+      grid.classList.add('hidden')
+      emptyEl.classList.remove('hidden')
+      countEl.textContent = ''
+      return
+    }
+
+    if (filtered.length === 0) {
+      grid.classList.add('hidden')
+      noResults.classList.remove('hidden')
+      countEl.textContent = `0 of ${allProperties.length} properties`
+      return
+    }
+
+    countEl.textContent = filtered.length === allProperties.length
+      ? App.pluralise(allProperties.length, 'property', 'properties')
+      : `${filtered.length} of ${allProperties.length} properties`
+
+    // Render cards — then async-load first photo for each
+    grid.innerHTML = filtered.map(p => `
+      <div class="property-card" id="pcard-${p.id}">
+        <div class="property-card__image" id="pimg-wrap-${p.id}">
+          <span style="color:var(--md-muted);font-size:2.5rem;">⬡</span>
+        </div>
+        <div class="property-card__body">
+          <p class="property-card__address">${esc(p.address || '—')}${p.suburb ? ', ' + esc(p.suburb) : ''}</p>
+          <p class="property-card__price">${esc(p.price || '—')}</p>
+          <div class="property-card__meta">
+            ${p.bedrooms  ? `<span>🛏 ${p.bedrooms}</span>`   : ''}
+            ${p.bathrooms ? `<span>🚿 ${p.bathrooms}</span>`  : ''}
+            ${p.garages   ? `<span>🚗 ${p.garages}</span>`    : ''}
+            ${p.size      ? `<span>${p.size} m²</span>`       : ''}
+            ${p.erfSize   ? `<span>Erf ${p.erfSize} m²</span>`: ''}
+          </div>
+          <div class="flex gap-sm" style="flex-wrap:wrap; margin-top:var(--spacing-xs);">
+            ${App.statusBadge(p.status || 'active')}
+            ${p.mandateType ? `<span class="badge badge--muted">${p.mandateType} mandate</span>` : ''}
+          </div>
+          ${p.assignedAgent
+            ? `<p class="text-sm text-muted" style="margin-top:var(--spacing-xs);">
+                Agent: ${esc(p.assignedAgent)}
+               </p>`
+            : ''}
+        </div>
+        <div class="property-card__actions">
+          <a href="property-form.html?id=${p.id}" class="btn btn--ghost btn--sm">Edit</a>
+          <a href="inspection-form.html?propertyId=${p.id}" class="btn btn--ghost btn--sm">Inspect</a>
+          <button class="btn btn--danger btn--sm" onclick="handleDelete('${p.id}', '${esc(p.address || 'this property')}')">Delete</button>
+        </div>
+      </div>
+    `).join('')
+
+    // Async load first photo per card
+    filtered.forEach(async p => {
+      if (p.photoIds && p.photoIds.length > 0) {
+        try {
+          const photo = await DB.get('photos', p.photoIds[0])
+          if (photo) {
+            const wrap = document.getElementById(`pimg-wrap-${p.id}`)
+            if (wrap) {
+              wrap.innerHTML = `<img
+                src="data:${photo.mimeType};base64,${photo.data}"
+                alt="${esc(p.address || '')}"
+                style="width:100%;height:100%;object-fit:cover;"
+              />`
+            }
+          }
+        } catch { /* non-critical */ }
+      }
+    })
+  }
+
+  function esc (str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  window.handleDelete = async function (id, address) {
+    const confirmed = await App.confirm(
+      `Delete <strong>${address}</strong>? Photos and associated data will also be removed.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      // Delete associated photos
+      const prop = allProperties.find(p => p.id === id)
+      if (prop && prop.photoIds) {
+        for (const pid of prop.photoIds) {
+          await DB.delete('photos', pid)
+        }
+      }
+      await DB.delete('properties', id)
+      allProperties = allProperties.filter(p => p.id !== id)
+      applyFilters()
+      App.toast('Property deleted.', 'success')
+    } catch {
+      App.toast('Could not delete property.', 'danger')
+    }
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  document.getElementById('search-suburb').addEventListener('input', App.debounce(applyFilters, 250))
+  document.getElementById('filter-type').addEventListener('change', applyFilters)
+  document.getElementById('filter-status').addEventListener('change', applyFilters)
+
+  function clearFilters () {
+    document.getElementById('search-suburb').value = ''
+    document.getElementById('filter-type').value   = ''
+    document.getElementById('filter-status').value = ''
+    applyFilters()
+  }
+  document.getElementById('btn-clear-filters').addEventListener('click', clearFilters)
+  document.getElementById('btn-clear-filters-2').addEventListener('click', clearFilters)
+
+  await loadProperties()
+
+})()
+</script>
+
+</body>
+</html>

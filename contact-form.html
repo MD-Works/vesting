@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Contact — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Contacts</p>
+      <h1 class="page-header__title" id="page-title">New Contact</h1>
+      <p class="page-header__subtitle" id="page-subtitle">Add a professional to your network.</p>
+      <div class="page-header__actions">
+        <a href="contacts.html" class="btn btn--ghost">← Back to Contacts</a>
+      </div>
+    </header>
+
+    <form id="contact-form" novalidate>
+
+      <!-- ── Contact Details ───────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Contact Details</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="name">Full Name <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="name" name="name" placeholder="Jane Smith" autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone" placeholder="+27 82 765 4321" autocomplete="tel" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="jane@smithattorneys.co.za" autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="company">Company / Practice</label>
+            <input type="text" id="company" name="company" placeholder="Smith Attorneys" autocomplete="organization" />
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+              <option value="">Select…</option>
+              <option value="attorney">Attorney</option>
+              <option value="contractor">Contractor</option>
+              <option value="colleague">Colleague</option>
+              <option value="developer">Developer</option>
+              <option value="bank">Bank</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="birthDate">Date of Birth</label>
+            <input type="date" id="birthDate" name="birthDate" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Relationship & History ────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Relationship &amp; History</h3>
+        <div class="form-grid">
+
+          <div class="form-group form-group--full">
+            <label for="relationship">Relationship Description</label>
+            <input
+              type="text"
+              id="relationship"
+              name="relationship"
+              placeholder="e.g. Go-to bond attorney for Umhlanga transfers, always responsive"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="lastContact">Last Contacted</label>
+            <input type="date" id="lastContact" name="lastContact" />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="notes">Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows="4"
+              placeholder="Specialises in bond registrations, Durban North area. Call before 15:00…"
+            ></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Actions ───────────────────────────────────────────────────── -->
+      <div class="flex gap-sm" style="flex-wrap:wrap;">
+        <button type="submit" class="btn btn--gold btn--lg" id="btn-save">Save Contact</button>
+        <a href="contacts.html" class="btn btn--ghost btn--lg">Cancel</a>
+        <button
+          type="button"
+          class="btn btn--danger btn--lg"
+          id="btn-delete"
+          style="display:none; margin-left:auto;">
+          Delete Contact
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Quick actions (edit mode only) -->
+    <div id="quick-actions" class="hidden mt-lg">
+      <div class="divider">✦</div>
+      <div class="flex gap-sm" style="flex-wrap:wrap;">
+        <button class="btn btn--ghost" id="btn-call" style="display:none;">📞 Call</button>
+        <button class="btn btn--whatsapp" id="btn-wa" style="display:none;">WhatsApp</button>
+      </div>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  const params   = new URLSearchParams(window.location.search)
+  const editId   = params.get('id')
+  const isEdit   = !!editId
+  let   existing = null
+
+  // ── Edit mode ─────────────────────────────────────────────────────────────
+  if (isEdit) {
+    document.getElementById('page-title').textContent    = 'Edit Contact'
+    document.getElementById('page-subtitle').textContent = 'Update contact details.'
+    document.getElementById('btn-save').textContent      = 'Update Contact'
+    document.getElementById('btn-delete').style.display  = 'inline-flex'
+    document.getElementById('quick-actions').classList.remove('hidden')
+
+    try {
+      existing = await Crypto.getDecrypted('contacts', editId)
+      if (!existing) {
+        App.toast('Contact not found.', 'danger')
+        setTimeout(() => { window.location.href = 'contacts.html' }, 1500)
+        return
+      }
+      populateForm(existing)
+      setupQuickActions(existing)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not load contact.', 'danger')
+    }
+  }
+
+  // ── Populate ──────────────────────────────────────────────────────────────
+  function populateForm (c) {
+    const fields = ['name','phone','email','company','category','relationship','birthDate','lastContact','notes']
+    fields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && c[f] !== undefined && c[f] !== null) el.value = c[f]
+    })
+  }
+
+  // ── Quick actions (call / WA) ─────────────────────────────────────────────
+  function setupQuickActions (c) {
+    const phone = App.formatPhone(c.phone || '')
+    if (phone) {
+      const btnCall = document.getElementById('btn-call')
+      const btnWa   = document.getElementById('btn-wa')
+
+      btnCall.style.display = 'inline-flex'
+      btnWa.style.display   = 'inline-flex'
+
+      btnCall.addEventListener('click', () => {
+        window.location.href = `tel:${phone.replace(/\s/g,'')}`
+      })
+      btnWa.addEventListener('click', () => App.whatsapp(phone))
+    }
+  }
+
+  // ── Live validation ───────────────────────────────────────────────────────
+  App.form.liveValidate('name')
+  App.form.liveValidate('phone')
+  App.form.liveValidate('email')
+
+  // ── Validation ────────────────────────────────────────────────────────────
+  function validateForm () {
+    const errors = []
+    App.form.clearAll('contact-form')
+
+    const name  = document.getElementById('name').value.trim()
+    const phone = document.getElementById('phone').value.trim()
+    const email = document.getElementById('email').value.trim()
+
+    if (!App.validate.required(name)) {
+      App.form.error('name', 'Full name is required.')
+      errors.push('Full name is required.')
+    }
+
+    if (phone && !App.validate.phone(phone)) {
+      App.form.error('phone', 'Enter a valid South African number (e.g. 082 765 4321).')
+      errors.push('Phone number must be a valid SA number.')
+    }
+
+    if (email && !App.validate.email(email)) {
+      App.form.error('email', 'Enter a valid email address.')
+      errors.push('Email address is not valid.')
+    }
+
+    if (errors.length > 0) App.form.showBanner('contact-form', errors)
+    return errors.length === 0
+  }
+
+  // ── Collect ───────────────────────────────────────────────────────────────
+  function collectFormData () {
+    const now = new Date().toISOString()
+    return {
+      name:         document.getElementById('name').value.trim(),
+      phone:        document.getElementById('phone').value.trim(),
+      email:        document.getElementById('email').value.trim(),
+      company:      document.getElementById('company').value.trim(),
+      category:     document.getElementById('category').value,
+      relationship: document.getElementById('relationship').value.trim(),
+      birthDate:    document.getElementById('birthDate').value || null,
+      lastContact:  document.getElementById('lastContact').value || null,
+      notes:        document.getElementById('notes').value.trim(),
+      updatedAt:    now
+    }
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  document.getElementById('contact-form').addEventListener('submit', async e => {
+    e.preventDefault()
+    if (!validateForm()) return
+
+    const btn = document.getElementById('btn-save')
+    btn.disabled    = true
+    btn.textContent = 'Saving…'
+
+    try {
+      const data = collectFormData()
+      if (isEdit) {
+        data.id        = editId
+        data.createdAt = existing.createdAt
+        await Crypto.putEncrypted('contacts', data)
+        App.toast('Contact updated.', 'success')
+      } else {
+        data.id        = App.uuid()
+        data.createdAt = new Date().toISOString()
+        await Crypto.putEncrypted('contacts', data)
+        App.toast('Contact saved.', 'success')
+      }
+      setTimeout(() => { window.location.href = 'contacts.html' }, 800)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not save contact. Please try again.', 'danger')
+      btn.disabled    = false
+      btn.textContent = isEdit ? 'Update Contact' : 'Save Contact'
+    }
+  })
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const name      = document.getElementById('name').value.trim() || 'this contact'
+    const confirmed = await App.confirm(
+      `Delete <strong>${name}</strong>? This cannot be undone.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      await DB.delete('contacts', editId)
+      App.toast(`${name} deleted.`, 'success')
+      setTimeout(() => { window.location.href = 'contacts.html' }, 800)
+    } catch {
+      App.toast('Could not delete contact.', 'danger')
+    }
+  })
+
+})()
+</script>
+
+</body>
+</html>

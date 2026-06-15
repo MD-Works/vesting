@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Diary — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .diary-sidebar { display:flex; flex-direction:column; gap:var(--spacing-lg); }
+    .diary-sidebar .form-section { margin-bottom:0; }
+    .calendar-controls { display:flex; gap:var(--spacing-xs); margin-bottom:var(--spacing-sm); flex-wrap:wrap; }
+    .calendar-controls .btn { flex:1; justify-content:center; min-width:60px; font-size:.75rem; }
+    .calendar-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; gap:var(--spacing-md); padding:var(--spacing-xl); text-align:center; }
+    #calendar-frame { display:none; width:100%; height:580px; border:none; filter:invert(0.88) hue-rotate(175deg) saturate(0.6) brightness(0.88); }
+    .followup-sidebar { max-height:300px; overflow-y:auto; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <nav id="vesting-nav"></nav>
+  <main class="page-content">
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Diary</p>
+      <h1 class="page-header__title">Diary</h1>
+      <p class="page-header__subtitle">Your schedule and follow-ups in one place.</p>
+    </header>
+    <div class="diary-layout">
+      <!-- Left: Google Calendar -->
+      <div>
+        <div class="diary-calendar">
+          <div class="calendar-controls" style="padding:var(--spacing-sm) var(--spacing-md) 0;">
+            <button class="btn btn--ghost btn--sm" onclick="setCalView('month')">Month</button>
+            <button class="btn btn--ghost btn--sm" onclick="setCalView('week')">Week</button>
+            <button class="btn btn--ghost btn--sm" onclick="setCalView('day')">Day</button>
+            <button class="btn btn--ghost btn--sm" onclick="setCalView('agenda')">Agenda</button>
+            <button class="btn btn--ghost btn--sm" id="btn-refresh-cal" style="margin-left:auto;">↻ Refresh</button>
+          </div>
+          <div id="calendar-setup" class="calendar-placeholder">
+            <span style="font-size:3rem;color:var(--md-gold-dk);">◷</span>
+            <h3>Connect your Google Calendar</h3>
+            <p class="tagline">Enter your Gmail address to embed your calendar here.</p>
+            <div style="display:flex;gap:var(--spacing-sm);width:100%;max-width:360px;">
+              <input type="email" id="gmail-input" placeholder="yourname@gmail.com" style="flex:1;" />
+              <button class="btn btn--gold" id="btn-connect-cal">Connect</button>
+            </div>
+            <p class="text-sm text-muted">Your calendar displays here in read-only mode. Events are created via Google Calendar.</p>
+          </div>
+          <iframe id="calendar-frame" title="Google Calendar" frameborder="0" scrolling="no"></iframe>
+        </div>
+        <div id="cal-connected-info" class="hidden" style="margin-top:var(--spacing-sm);">
+          <p class="text-sm text-muted">
+            Connected: <span id="cal-email-display" style="color:var(--md-gold);"></span>
+            <a href="#" id="btn-disconnect-cal" style="color:var(--md-danger);margin-left:var(--spacing-sm);">Disconnect</a>
+          </p>
+        </div>
+      </div>
+      <!-- Right: Sidebar -->
+      <div class="diary-sidebar">
+        <div class="form-section">
+          <h3 class="form-section__title">Add to Google Calendar</h3>
+          <div class="form-grid" style="grid-template-columns:1fr;">
+            <div class="form-group">
+              <label for="event-type">Event Type</label>
+              <select id="event-type">
+                <option value="Viewing">Viewing</option>
+                <option value="Follow-up">Follow-up</option>
+                <option value="Inspection">Inspection</option>
+                <option value="Meeting">Meeting</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="lead-prefill">Pre-fill from Lead</label>
+              <select id="lead-prefill"><option value="">— Select a lead (optional) —</option></select>
+            </div>
+            <div class="form-group">
+              <label for="event-title">Event Title <span style="color:var(--md-danger)">*</span></label>
+              <input type="text" id="event-title" placeholder="e.g. Viewing — John Smith — Umhlanga" />
+            </div>
+            <div class="form-group">
+              <label for="event-date">Date <span style="color:var(--md-danger)">*</span></label>
+              <input type="date" id="event-date" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-sm);">
+              <div class="form-group">
+                <label for="event-start">Start</label>
+                <input type="time" id="event-start" value="09:00" />
+              </div>
+              <div class="form-group">
+                <label for="event-end">End</label>
+                <input type="time" id="event-end" value="10:00" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="event-location">Location</label>
+              <input type="text" id="event-location" placeholder="12 Beach Road, Umhlanga" />
+            </div>
+            <div class="form-group">
+              <label for="event-notes">Notes</label>
+              <textarea id="event-notes" rows="3" placeholder="Lead details, viewing instructions…"></textarea>
+            </div>
+          </div>
+          <button type="button" class="btn btn--gold btn--full" id="btn-open-gcal" style="margin-top:var(--spacing-md);">
+            Open in Google Calendar ↗
+          </button>
+          <p class="text-sm text-muted" style="margin-top:var(--spacing-sm);">Opens pre-filled. Click Save in Google to confirm, then refresh here.</p>
+        </div>
+        <div class="form-section">
+          <h3 class="form-section__title">Follow-ups Today</h3>
+          <div class="followup-sidebar" id="sidebar-followups">
+            <p class="text-sm text-muted">Loading…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer id="vesting-footer"></footer>
+  </main>
+</div>
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  const calFrame = document.getElementById('calendar-frame')
+  const calSetup = document.getElementById('calendar-setup')
+  const calInfo  = document.getElementById('cal-connected-info')
+  let currentView = 'month'
+  let calEmail    = await DB.getSetting('calendarEmail') || ''
+
+  function buildCalUrl(email, view) {
+    const modeMap = { month:'MONTH', week:'WEEK', day:'DAY', agenda:'AGENDA' }
+    return `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(email)}&ctz=Africa%2FJohannesburg&showTitle=0&showNav=1&showDate=1&showPrint=0&showTabs=1&showCalendars=0&mode=${modeMap[view]||'MONTH'}`
+  }
+
+  function connectCalendar(email) {
+    calEmail = email.trim()
+    calFrame.src = buildCalUrl(calEmail, currentView)
+    calSetup.style.display = 'none'
+    calFrame.style.display = 'block'
+    document.getElementById('cal-email-display').textContent = calEmail
+    calInfo.classList.remove('hidden')
+    DB.setSetting('calendarEmail', calEmail)
+  }
+
+  if (calEmail) connectCalendar(calEmail)
+
+  document.getElementById('btn-connect-cal').addEventListener('click', () => {
+    const email = document.getElementById('gmail-input').value.trim()
+    if (!email || !App.validate.email(email)) { App.toast('Enter a valid Gmail address.', 'warning'); return }
+    connectCalendar(email)
+  })
+  document.getElementById('gmail-input').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-connect-cal').click() })
+
+  document.getElementById('btn-disconnect-cal').addEventListener('click', async e => {
+    e.preventDefault()
+    const ok = await App.confirm('Disconnect Google Calendar?', 'Disconnect', 'danger')
+    if (!ok) return
+    calEmail = ''
+    await DB.deleteSetting('calendarEmail')
+    calFrame.style.display = 'none'; calFrame.src = ''
+    calSetup.style.display = 'flex'
+    calInfo.classList.add('hidden')
+  })
+
+  window.setCalView = function(view) {
+    currentView = view
+    if (calEmail) calFrame.src = buildCalUrl(calEmail, view)
+  }
+
+  document.getElementById('btn-refresh-cal').addEventListener('click', () => {
+    if (calEmail) { calFrame.src = buildCalUrl(calEmail, currentView); App.toast('Calendar refreshed.', 'gold', 2000) }
+    else App.toast('Connect your calendar first.', 'warning')
+  })
+
+  // Lead prefill
+  const allLeads = await Crypto.getAllDecrypted('leads')
+  allLeads.sort((a,b) => (a.name||'').localeCompare(b.name||''))
+  const leadSel = document.getElementById('lead-prefill')
+  allLeads.forEach(l => {
+    const o = document.createElement('option')
+    o.value = l.id
+    o.textContent = `${l.name||'—'}${l.phone ? ' · '+App.formatPhone(l.phone) : ''}`
+    leadSel.appendChild(o)
+  })
+
+  function prefillFromLead() {
+    const lead = allLeads.find(l => l.id === leadSel.value)
+    if (!lead) return
+    const type  = document.getElementById('event-type').value
+    const areas = lead.areas && lead.areas.length ? lead.areas[0] : ''
+    document.getElementById('event-title').value = `${type} — ${lead.name||''}${areas?' — '+areas:''}`
+    const waLink = lead.phone ? `WhatsApp: https://wa.me/${App.formatPhone(lead.phone).replace(/\D/g,'')}` : ''
+    document.getElementById('event-notes').value = [
+      lead.notes   ? `Notes: ${lead.notes}` : '',
+      lead.budget  ? `Budget: ${lead.budget}` : '',
+      lead.areas   ? `Areas: ${lead.areas.join(', ')}` : '',
+      waLink
+    ].filter(Boolean).join('\n')
+    if (lead.followUpDate) document.getElementById('event-date').value = lead.followUpDate.split('T')[0]
+  }
+
+  leadSel.addEventListener('change', prefillFromLead)
+  document.getElementById('event-type').addEventListener('change', () => { if (leadSel.value) prefillFromLead() })
+
+  document.getElementById('event-date').value = new Date().toISOString().split('T')[0]
+
+  document.getElementById('btn-open-gcal').addEventListener('click', () => {
+    const title = document.getElementById('event-title').value.trim()
+    const date  = document.getElementById('event-date').value
+    if (!title) { App.form.error('event-title','Event title is required.'); App.toast('Enter an event title.','warning'); return }
+    if (!date)  { App.form.error('event-date','Date is required.'); App.toast('Select a date.','warning'); return }
+    App.form.clearError('event-title'); App.form.clearError('event-date')
+    const url = App.googleCalendarUrl({
+      title, date,
+      startTime: document.getElementById('event-start').value,
+      endTime:   document.getElementById('event-end').value,
+      location:  document.getElementById('event-location').value.trim(),
+      notes:     document.getElementById('event-notes').value.trim()
+    })
+    window.open(url, '_blank', 'noopener,noreferrer')
+    App.toast('Opened in Google Calendar. Save there, then refresh here.', 'gold', 5000)
+  })
+
+  // Follow-ups sidebar
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+  function renderFollowups() {
+    const container = document.getElementById('sidebar-followups')
+    const today = new Date(); today.setHours(0,0,0,0)
+    const items = allLeads.filter(l => {
+      if (!l.followUpDate) return false
+      const d = new Date(l.followUpDate); d.setHours(0,0,0,0)
+      return d <= today
+    }).map(l => {
+      const d = new Date(l.followUpDate); d.setHours(0,0,0,0)
+      return { ...l, _cls: d < today ? 'overdue' : 'today' }
+    })
+
+    if (!items.length) {
+      container.innerHTML = '<p class="text-sm text-muted">No follow-ups due today. You\'re on top of it. 🎉</p>'
+      return
+    }
+    container.innerHTML = items.map(l => `
+      <div class="followup-item followup-item--${l._cls}" style="margin-bottom:var(--spacing-xs);">
+        <div>
+          <p class="followup-item__name">${esc(l.name||'—')}</p>
+          <p class="followup-item__date followup-item__date--${l._cls}">${App.relativeTime(l.followUpDate)}</p>
+        </div>
+        ${l.phone ? `<button class="btn btn--whatsapp btn--sm" onclick="handleWA('${l.id}')">WA</button>` : ''}
+      </div>`).join('')
+  }
+
+  window.handleWA = id => { const l = allLeads.find(x => x.id===id); if(l) App.whatsappLead(l) }
+  App.form.liveValidate('event-title'); App.form.liveValidate('event-date')
+  renderFollowups()
+})()
+</script>
+</body>
+</html>

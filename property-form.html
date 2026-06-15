@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Property — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Photo upload area */
+    #photo-input { display: none; }
+
+    .photo-gallery-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+
+    .photo-count {
+      font-size: .8rem;
+      color: var(--md-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Properties</p>
+      <h1 class="page-header__title" id="page-title">New Property</h1>
+      <p class="page-header__subtitle" id="address-preview">Complete the form to add a new listing.</p>
+      <div class="page-header__actions">
+        <a href="properties.html" class="btn btn--ghost">← Back to Properties</a>
+        <a href="#" class="btn btn--ghost" id="btn-inspect" style="display:none;">New Inspection</a>
+      </div>
+    </header>
+
+    <form id="property-form" novalidate>
+
+      <!-- ── 1. Location ───────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">1. Location</h3>
+        <div class="form-grid">
+
+          <div class="form-group form-group--full">
+            <label for="address">Street Address <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="address" placeholder="12 Beach Road" autocomplete="street-address" />
+          </div>
+
+          <div class="form-group">
+            <label for="suburb">Suburb <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="suburb" placeholder="Umhlanga Rocks" />
+          </div>
+
+          <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" placeholder="Durban" value="Durban" />
+          </div>
+
+          <div class="form-group">
+            <label for="province">Province</label>
+            <select id="province">
+              <option value="">Select…</option>
+              <option value="KwaZulu-Natal" selected>KwaZulu-Natal</option>
+              <option value="Gauteng">Gauteng</option>
+              <option value="Western Cape">Western Cape</option>
+              <option value="Eastern Cape">Eastern Cape</option>
+              <option value="Limpopo">Limpopo</option>
+              <option value="Mpumalanga">Mpumalanga</option>
+              <option value="North West">North West</option>
+              <option value="Free State">Free State</option>
+              <option value="Northern Cape">Northern Cape</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="erfNumber">Erf Number</label>
+            <input type="text" id="erfNumber" placeholder="Erf 1234" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 2. Listing Type & Status ──────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">2. Listing Type &amp; Status</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="type">Listing For <span style="color:var(--md-danger)">*</span></label>
+            <select id="type">
+              <option value="">Select…</option>
+              <option value="sale">For Sale</option>
+              <option value="rental">For Rent</option>
+              <option value="both">Sale &amp; Rent</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status">
+              <option value="active">Active</option>
+              <option value="pending">Pending</option>
+              <option value="sold">Sold</option>
+              <option value="rented">Rented</option>
+              <option value="off-market">Off-market</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mandateType">Mandate Type</label>
+            <select id="mandateType">
+              <option value="">Select…</option>
+              <option value="sole">Sole Mandate</option>
+              <option value="open">Open Mandate</option>
+              <option value="dual">Dual Mandate</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="mandateExpiry">Mandate Expiry</label>
+            <input type="date" id="mandateExpiry" />
+          </div>
+
+          <div class="form-group">
+            <label for="createdAt">Date Listed</label>
+            <input type="date" id="createdAt" />
+          </div>
+
+          <div class="form-group">
+            <label for="assignedAgent">Assigned Agent</label>
+            <input type="email" id="assignedAgent" placeholder="agent@email.co.za" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 3. Pricing ────────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">3. Pricing</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="price">Price / Rental <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="price" placeholder="R 2 500 000 or R 12 000/month" />
+          </div>
+
+          <div class="form-group">
+            <label for="levies">Levies (per month)</label>
+            <input type="text" id="levies" placeholder="R 1 200" />
+          </div>
+
+          <div class="form-group">
+            <label for="rates">Rates &amp; Taxes (per month)</label>
+            <input type="text" id="rates" placeholder="R 800" />
+          </div>
+
+          <div class="form-group">
+            <label for="deposit">Deposit</label>
+            <input type="text" id="deposit" placeholder="R 30 000" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 4. Property Details ───────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">4. Property Details</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="propertyType">Property Type</label>
+            <select id="propertyType">
+              <option value="">Select…</option>
+              <option value="freestanding">Freestanding House</option>
+              <option value="townhouse">Townhouse</option>
+              <option value="apartment">Apartment / Flat</option>
+              <option value="duplex">Duplex</option>
+              <option value="cluster">Cluster</option>
+              <option value="smallholding">Smallholding</option>
+              <option value="vacant-land">Vacant Land</option>
+              <option value="commercial">Commercial</option>
+              <option value="industrial">Industrial</option>
+              <option value="farm">Farm</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bedrooms">Bedrooms</label>
+            <select id="bedrooms">
+              <option value="">—</option>
+              <option value="0">Bachelor / Studio</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6+">6+</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bathrooms">Bathrooms</label>
+            <select id="bathrooms">
+              <option value="">—</option>
+              <option value="1">1</option>
+              <option value="1.5">1.5</option>
+              <option value="2">2</option>
+              <option value="2.5">2.5</option>
+              <option value="3">3</option>
+              <option value="4+">4+</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="garages">Garages / Parking</label>
+            <select id="garages">
+              <option value="">—</option>
+              <option value="0">None</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4+">4+</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="size">Floor Size (m²)</label>
+            <input type="number" id="size" placeholder="180" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="erfSize">Erf / Stand Size (m²)</label>
+            <input type="number" id="erfSize" placeholder="650" min="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="yearBuilt">Year Built</label>
+            <input type="number" id="yearBuilt" placeholder="2005" min="1800" max="2100" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 5. Features ───────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">5. Features &amp; Amenities</h3>
+
+        <div class="feature-grid" id="feature-grid">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="form-group form-group--full" style="margin-top:var(--spacing-md);">
+          <label for="otherFeatures">Other Features</label>
+          <input type="text" id="otherFeatures" placeholder="Flatlet, borehole, staff quarters, double storey…" />
+        </div>
+      </div>
+
+      <!-- ── 6. Photo Gallery ──────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">6. Photo Gallery</h3>
+        <div class="photo-gallery-wrap">
+          <p class="text-sm text-muted">Photos are stored securely on your device. Tap to add.</p>
+          <div class="photo-gallery" id="photo-gallery">
+            <!-- Upload button + thumbnails rendered by JS -->
+          </div>
+          <p class="photo-count" id="photo-count"></p>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" multiple />
+      </div>
+
+      <!-- ── 7. Description ────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">7. Description</h3>
+        <div class="form-grid">
+
+          <div class="form-group form-group--full">
+            <label for="description">Advertising Copy</label>
+            <textarea id="description" rows="5"
+              placeholder="Stunning 3-bedroom family home in the heart of Umhlanga Rocks. Features open-plan living, modern kitchen, covered patio and sparkling pool…">
+            </textarea>
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="internalNotes">Internal Notes</label>
+            <textarea id="internalNotes" rows="3"
+              placeholder="Owner prefers viewings after 14:00. Dog on property — gate must be closed. Key at reception.">
+            </textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 8. Owner / Seller Contact ────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">8. Owner / Seller Contact</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="ownerName">Owner Name</label>
+            <input type="text" id="ownerName" placeholder="Mr Smith" />
+          </div>
+
+          <div class="form-group">
+            <label for="ownerPhone">Owner Phone</label>
+            <input type="tel" id="ownerPhone" placeholder="+27 82 000 0000" />
+          </div>
+
+          <div class="form-group">
+            <label for="ownerEmail">Owner Email</label>
+            <input type="email" id="ownerEmail" placeholder="smith@email.co.za" />
+          </div>
+
+          <div class="form-group">
+            <label for="ownerPreferred">Preferred Contact</label>
+            <select id="ownerPreferred">
+              <option value="">Select…</option>
+              <option value="phone">Phone Call</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="showingInstructions">Showing Instructions</label>
+            <textarea id="showingInstructions" rows="2"
+              placeholder="Call owner 1 hour before. No viewings on Sundays. Leave shoes at front door.">
+            </textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Form actions ───────────────────────────────────────────────── -->
+      <div class="flex gap-sm" style="flex-wrap:wrap;">
+        <button type="submit" class="btn btn--gold btn--lg" id="btn-save">Save Property</button>
+        <a href="properties.html" class="btn btn--ghost btn--lg">Cancel</a>
+        <button type="button" class="btn btn--danger btn--lg" id="btn-delete" style="display:none;margin-left:auto;">
+          Delete Property
+        </button>
+      </div>
+
+    </form>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  // ── Constants ─────────────────────────────────────────────────────────────
+  const FEATURES = [
+    'Swimming Pool', 'Solar Power', 'Security Estate', 'Electric Fence',
+    'Alarm System', 'CCTV', 'Air Conditioning', 'Underfloor Heating',
+    'Borehole', 'Generator', 'Fibre Internet', 'Flatlet / Granny Flat',
+    'Staff Quarters', 'Braai / Boma Area', 'Covered Patio', 'Double Storey',
+    'Study / Home Office', 'Laundry Room', 'Walk-in Closet', 'Scullery',
+    'Open Plan Living', 'Sea View', 'Mountain View', 'Pet Friendly', 'Garden'
+  ]
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  const params    = new URLSearchParams(window.location.search)
+  const editId    = params.get('id')
+  const isEdit    = !!editId
+  let   existing  = null
+  let   photoIds  = []   // current photo IDs for this property
+  let   newPhotos = []   // { id, data, mimeType, description } — to be saved on submit
+
+  // ── Edit mode setup ───────────────────────────────────────────────────────
+  if (isEdit) {
+    document.getElementById('page-title').textContent = 'Edit Property'
+    document.getElementById('btn-save').textContent   = 'Update Property'
+    document.getElementById('btn-delete').style.display = 'inline-flex'
+
+    const inspectBtn = document.getElementById('btn-inspect')
+    inspectBtn.style.display = 'inline-flex'
+    inspectBtn.href = `inspection-form.html?propertyId=${editId}`
+
+    try {
+      existing = await Crypto.getDecrypted('properties', editId)
+      if (!existing) {
+        App.toast('Property not found.', 'danger')
+        setTimeout(() => { window.location.href = 'properties.html' }, 1500)
+        return
+      }
+      photoIds = existing.photoIds || []
+      populateForm(existing)
+      await loadPhotos()
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not load property.', 'danger')
+    }
+  } else {
+    document.getElementById('createdAt').value = new Date().toISOString().split('T')[0]
+  }
+
+  // ── Render features grid ──────────────────────────────────────────────────
+  function renderFeatures (selected = []) {
+    const grid = document.getElementById('feature-grid')
+    grid.innerHTML = FEATURES.map(f => `
+      <label class="feature-chip ${selected.includes(f) ? 'feature-chip--active' : ''}" data-feature="${f}">
+        <input type="checkbox" value="${f}" ${selected.includes(f) ? 'checked' : ''} />
+        <span class="feature-chip__label">${f}</span>
+      </label>
+    `).join('')
+
+    // Toggle active class on click
+    grid.querySelectorAll('.feature-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cb = chip.querySelector('input')
+        chip.classList.toggle('feature-chip--active', cb.checked)
+      })
+    })
+  }
+
+  renderFeatures()
+
+  // ── Populate form (edit) ──────────────────────────────────────────────────
+  function populateForm (prop) {
+    const textFields = [
+      'address','suburb','city','erfNumber','assignedAgent',
+      'price','levies','rates','deposit','otherFeatures',
+      'description','internalNotes',
+      'ownerName','ownerPhone','ownerEmail','showingInstructions'
+    ]
+    textFields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && prop[f] !== undefined && prop[f] !== null) el.value = prop[f]
+    })
+
+    const selectFields = [
+      'province','type','status','mandateType','propertyType',
+      'bedrooms','bathrooms','garages','ownerPreferred'
+    ]
+    selectFields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && prop[f]) el.value = prop[f]
+    })
+
+    const numberFields = ['size','erfSize','yearBuilt']
+    numberFields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && prop[f]) el.value = prop[f]
+    })
+
+    if (prop.mandateExpiry) document.getElementById('mandateExpiry').value = prop.mandateExpiry.split('T')[0]
+    if (prop.createdAt)     document.getElementById('createdAt').value     = prop.createdAt.split('T')[0]
+
+    renderFeatures(prop.features || [])
+    updateAddressPreview()
+  }
+
+  // ── Live address preview ──────────────────────────────────────────────────
+  function updateAddressPreview () {
+    const address = document.getElementById('address').value.trim()
+    const suburb  = document.getElementById('suburb').value.trim()
+    const preview = document.getElementById('address-preview')
+    if (address || suburb) {
+      preview.textContent = [address, suburb].filter(Boolean).join(', ')
+    } else {
+      preview.textContent = 'Complete the form to add a new listing.'
+    }
+  }
+
+  document.getElementById('address').addEventListener('input', updateAddressPreview)
+  document.getElementById('suburb').addEventListener('input', updateAddressPreview)
+
+  // ── Photo handling ────────────────────────────────────────────────────────
+  async function loadPhotos () {
+    renderPhotoGallery()
+    // Load thumbnails from DB
+    for (const pid of photoIds) {
+      try {
+        const photo = await DB.get('photos', pid)
+        if (photo) addThumbToGallery(photo.id, `data:${photo.mimeType};base64,${photo.data}`, true)
+      } catch { /* skip missing */ }
+    }
+  }
+
+  function renderPhotoGallery () {
+    const gallery = document.getElementById('photo-gallery')
+    gallery.innerHTML = `
+      <div class="photo-upload-btn" id="photo-upload-btn" role="button" tabindex="0" aria-label="Add photos">
+        <span class="photo-upload-btn__icon">📷</span>
+        <span>Add Photos</span>
+      </div>
+    `
+    document.getElementById('photo-upload-btn').addEventListener('click', () => {
+      document.getElementById('photo-input').click()
+    })
+    updatePhotoCount()
+  }
+
+  function addThumbToGallery (id, src, existing = false) {
+    const gallery   = document.getElementById('photo-gallery')
+    const uploadBtn = document.getElementById('photo-upload-btn')
+
+    const thumb = document.createElement('div')
+    thumb.className  = 'photo-thumb'
+    thumb.dataset.id = id
+    thumb.innerHTML  = `
+      <img src="${src}" alt="Property photo" />
+      <button class="photo-thumb__remove" aria-label="Remove photo" type="button">&times;</button>
+    `
+    thumb.querySelector('.photo-thumb__remove').addEventListener('click', () => removePhoto(id, existing))
+    gallery.insertBefore(thumb, uploadBtn)
+    updatePhotoCount()
+  }
+
+  function removePhoto (id, isExisting) {
+    // Remove from gallery UI
+    const thumb = document.querySelector(`.photo-thumb[data-id="${id}"]`)
+    if (thumb) thumb.remove()
+
+    if (isExisting) {
+      photoIds = photoIds.filter(pid => pid !== id)
+    } else {
+      newPhotos = newPhotos.filter(p => p.id !== id)
+    }
+    updatePhotoCount()
+  }
+
+  function updatePhotoCount () {
+    const total = photoIds.length + newPhotos.length
+    document.getElementById('photo-count').textContent =
+      total > 0 ? App.pluralise(total, 'photo') : ''
+  }
+
+  // Handle file input
+  document.getElementById('photo-input').addEventListener('change', async e => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue
+      // Limit file size warning (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        App.toast(`${file.name} is over 5MB — it may slow down your device.`, 'warning', 6000)
+      }
+
+      try {
+        const base64 = await fileToBase64(file)
+        const id     = App.uuid()
+        newPhotos.push({
+          id,
+          data:       base64,
+          mimeType:   file.type,
+          description: '',
+          fileSize:   file.size
+        })
+        addThumbToGallery(id, `data:${file.type};base64,${base64}`, false)
+      } catch {
+        App.toast(`Could not read ${file.name}.`, 'danger')
+      }
+    }
+    // Clear input so same file can be re-added
+    e.target.value = ''
+  })
+
+  function fileToBase64 (file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload  = () => resolve(reader.result.split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  // ── Live validation ───────────────────────────────────────────────────────
+  App.form.liveValidate('address')
+  App.form.liveValidate('suburb')
+  App.form.liveValidate('type')
+  App.form.liveValidate('price')
+  App.form.liveValidate('ownerPhone')
+  App.form.liveValidate('ownerEmail')
+
+  // ── Validation ────────────────────────────────────────────────────────────
+  function validateForm () {
+    const errors = []
+    App.form.clearAll('property-form')
+
+    const address    = document.getElementById('address').value.trim()
+    const suburb     = document.getElementById('suburb').value.trim()
+    const type       = document.getElementById('type').value
+    const price      = document.getElementById('price').value.trim()
+    const ownerPhone = document.getElementById('ownerPhone').value.trim()
+    const ownerEmail = document.getElementById('ownerEmail').value.trim()
+
+    if (!address) {
+      App.form.error('address', 'Street address is required.')
+      errors.push('Street address is required.')
+    }
+    if (!suburb) {
+      App.form.error('suburb', 'Suburb is required.')
+      errors.push('Suburb is required.')
+    }
+    if (!type) {
+      App.form.error('type', 'Please select what this property is listed for.')
+      errors.push('Listing type is required (Sale / Rent / Both).')
+    }
+    if (!price) {
+      App.form.error('price', 'Price or rental amount is required.')
+      errors.push('Price / rental amount is required.')
+    }
+    if (ownerPhone && !App.validate.phone(ownerPhone)) {
+      App.form.error('ownerPhone', 'Enter a valid SA number (e.g. 082 000 0000).')
+      errors.push('Owner phone must be a valid SA number.')
+    }
+    if (ownerEmail && !App.validate.email(ownerEmail)) {
+      App.form.error('ownerEmail', 'Enter a valid email address.')
+      errors.push('Owner email is not valid.')
+    }
+
+    if (errors.length) App.form.showBanner('property-form', errors)
+    return errors.length === 0
+  }
+
+  // ── Collect form data ─────────────────────────────────────────────────────
+  function collectFormData () {
+    const selectedFeatures = Array.from(
+      document.querySelectorAll('#feature-grid input[type="checkbox"]:checked')
+    ).map(cb => cb.value)
+
+    const mandateExpiry = document.getElementById('mandateExpiry').value
+    const createdAtVal  = document.getElementById('createdAt').value
+    const now           = new Date().toISOString()
+
+    return {
+      address:             document.getElementById('address').value.trim(),
+      suburb:              document.getElementById('suburb').value.trim(),
+      city:                document.getElementById('city').value.trim(),
+      province:            document.getElementById('province').value,
+      erfNumber:           document.getElementById('erfNumber').value.trim(),
+      type:                document.getElementById('type').value,
+      status:              document.getElementById('status').value || 'active',
+      mandateType:         document.getElementById('mandateType').value,
+      mandateExpiry:       mandateExpiry ? new Date(mandateExpiry).toISOString() : null,
+      assignedAgent:       document.getElementById('assignedAgent').value.trim(),
+      price:               document.getElementById('price').value.trim(),
+      levies:              document.getElementById('levies').value.trim(),
+      rates:               document.getElementById('rates').value.trim(),
+      deposit:             document.getElementById('deposit').value.trim(),
+      propertyType:        document.getElementById('propertyType').value,
+      bedrooms:            document.getElementById('bedrooms').value,
+      bathrooms:           document.getElementById('bathrooms').value,
+      garages:             document.getElementById('garages').value,
+      size:                parseFloat(document.getElementById('size').value) || null,
+      erfSize:             parseFloat(document.getElementById('erfSize').value) || null,
+      yearBuilt:           parseInt(document.getElementById('yearBuilt').value) || null,
+      features:            selectedFeatures,
+      otherFeatures:       document.getElementById('otherFeatures').value.trim(),
+      description:         document.getElementById('description').value.trim(),
+      internalNotes:       document.getElementById('internalNotes').value.trim(),
+      ownerName:           document.getElementById('ownerName').value.trim(),
+      ownerPhone:          document.getElementById('ownerPhone').value.trim(),
+      ownerEmail:          document.getElementById('ownerEmail').value.trim(),
+      ownerPreferred:      document.getElementById('ownerPreferred').value,
+      showingInstructions: document.getElementById('showingInstructions').value.trim(),
+      photoIds:            [...photoIds],
+      createdAt:           createdAtVal ? new Date(createdAtVal).toISOString() : now,
+      updatedAt:           now
+    }
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  document.getElementById('property-form').addEventListener('submit', async e => {
+    e.preventDefault()
+    if (!validateForm()) return
+
+    const btn = document.getElementById('btn-save')
+    btn.disabled    = true
+    btn.textContent = 'Saving…'
+
+    try {
+      const propertyId = isEdit ? editId : App.uuid()
+
+      // Save new photos to DB first
+      for (const photo of newPhotos) {
+        await DB.put('photos', {
+          id:           photo.id,
+          propertyId:   propertyId,
+          inspectionId: null,
+          data:         photo.data,
+          mimeType:     photo.mimeType,
+          description:  photo.description,
+          uploadedAt:   new Date().toISOString(),
+          fileSize:     photo.fileSize
+        })
+        photoIds.push(photo.id)
+      }
+      newPhotos = []
+
+      const data = collectFormData()
+      data.id       = propertyId
+      data.photoIds = [...photoIds]
+
+      if (isEdit) {
+        data.createdAt = existing.createdAt
+      }
+
+      await Crypto.putEncrypted('properties', data)
+      App.toast(isEdit ? 'Property updated.' : 'Property saved.', 'success')
+      setTimeout(() => { window.location.href = 'properties.html' }, 800)
+
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not save property. Please try again.', 'danger')
+      btn.disabled    = false
+      btn.textContent = isEdit ? 'Update Property' : 'Save Property'
+    }
+  })
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const address   = document.getElementById('address').value.trim() || 'this property'
+    const confirmed = await App.confirm(
+      `Delete <strong>${address}</strong>? All photos and data will be permanently removed.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      // Delete all photos
+      for (const pid of photoIds) {
+        try { await DB.delete('photos', pid) } catch { /* skip */ }
+      }
+      await DB.delete('properties', editId)
+      App.toast('Property deleted.', 'success')
+      setTimeout(() => { window.location.href = 'properties.html' }, 800)
+    } catch {
+      App.toast('Could not delete property.', 'danger')
+    }
+  })
+
+})()
+</script>
+
+</body>
+</html>

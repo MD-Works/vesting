@@ -1,0 +1,21 @@
+{
+  "name": "Vesting",
+  "short_name": "Vesting",
+  "description": "Practice management for South African estate agents. By MD Works.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#110e09",
+  "theme_color": "#c9943c",
+  "lang": "en-ZA",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "New Lead",     "url": "/lead-form.html",     "description": "Add a new lead"     },
+    { "name": "New Property", "url": "/property-form.html", "description": "Add a new property" },
+    { "name": "Diary",        "url": "/diary.html",         "description": "Open your diary"    }
+  ]
+}

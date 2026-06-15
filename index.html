@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <meta name="description" content="Vesting — Practice management for South African estate agents." />
+  <title>Dashboard — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Sidebar / bottom nav (injected by app.js) -->
+  <nav id="vesting-nav"></nav>
+
+  <!-- Main content -->
+  <main class="page-content">
+
+    <!-- PWA install banner (shown by JS if available) -->
+    <div id="install-banner" class="install-banner hidden">
+      <p class="install-banner__text">
+        <strong>Install Vesting</strong> — add to your home screen for offline access.
+      </p>
+      <div class="flex gap-sm">
+        <button class="btn btn--gold btn--sm" id="btn-install">Install</button>
+        <button class="btn btn--ghost btn--sm" id="btn-install-dismiss">Not now</button>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Dashboard</p>
+      <h1 class="page-header__title" id="greeting">Good morning</h1>
+      <p class="page-header__subtitle" id="greeting-sub">
+        Here's what needs your attention today.
+      </p>
+    </header>
+
+    <!-- Stats row -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <p class="stat-card__label">Total Leads</p>
+        <p class="stat-card__value" id="stat-leads">—</p>
+        <p class="stat-card__sub">in your pipeline</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Properties</p>
+        <p class="stat-card__value" id="stat-properties">—</p>
+        <p class="stat-card__sub">active listings</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Inspections</p>
+        <p class="stat-card__value" id="stat-inspections">—</p>
+        <p class="stat-card__sub">on record</p>
+      </div>
+      <div class="stat-card" id="stat-followups-card">
+        <p class="stat-card__label">Follow-ups Today</p>
+        <p class="stat-card__value" id="stat-followups">—</p>
+        <p class="stat-card__sub" id="stat-overdue-sub"></p>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="divider">✦</div>
+
+    <div class="section-heading">
+      <h2>Quick Actions</h2>
+    </div>
+
+    <div class="actions-grid">
+      <a href="lead-form.html" class="action-card">
+        <span class="action-card__icon">◈</span>
+        <span class="action-card__label">New Lead</span>
+      </a>
+      <a href="property-form.html" class="action-card">
+        <span class="action-card__icon">⬡</span>
+        <span class="action-card__label">New Property</span>
+      </a>
+      <a href="inspection-form.html" class="action-card">
+        <span class="action-card__icon">✓</span>
+        <span class="action-card__label">New Inspection</span>
+      </a>
+      <a href="diary.html" class="action-card">
+        <span class="action-card__icon">◷</span>
+        <span class="action-card__label">Open Diary</span>
+      </a>
+      <a href="contacts.html" class="action-card">
+        <span class="action-card__icon">◉</span>
+        <span class="action-card__label">Contacts</span>
+      </a>
+      <a href="settings.html" class="action-card">
+        <span class="action-card__icon">⚙</span>
+        <span class="action-card__label">Settings</span>
+      </a>
+    </div>
+
+    <!-- Follow-ups section -->
+    <div class="divider">✦</div>
+
+    <div id="followups-section">
+      <div class="section-heading">
+        <h2>Follow-ups</h2>
+        <a href="leads.html" class="btn btn--ghost btn--sm">View all leads</a>
+      </div>
+
+      <!-- Overdue -->
+      <div id="overdue-wrap" class="hidden">
+        <p class="text-sm" style="color: var(--md-danger); margin-bottom: var(--spacing-sm);">
+          <strong>Overdue</strong>
+        </p>
+        <div class="followup-list" id="overdue-list"></div>
+      </div>
+
+      <!-- Due today -->
+      <div id="today-wrap" class="hidden mt-md">
+        <p class="text-sm" style="color: var(--md-warning); margin-bottom: var(--spacing-sm);">
+          <strong>Due today</strong>
+        </p>
+        <div class="followup-list" id="today-list"></div>
+      </div>
+
+      <!-- Empty -->
+      <div id="followups-empty" class="hidden">
+        <div class="empty-state" style="padding: var(--spacing-lg) 0;">
+          <span class="empty-state__ornament">✦</span>
+          <p class="empty-state__message">No follow-ups overdue or due today. You're on top of it.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent leads -->
+    <div class="divider">✦</div>
+
+    <div class="section-heading">
+      <h2>Recent Leads</h2>
+      <a href="leads.html" class="btn btn--ghost btn--sm">View all</a>
+    </div>
+
+    <div id="recent-leads-wrap">
+      <div class="table-wrap">
+        <table id="recent-leads-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Follow-up</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recent-leads-body">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="recent-leads-empty" class="hidden">
+        <div class="empty-state" style="padding: var(--spacing-lg) 0;">
+          <span class="empty-state__ornament">◈</span>
+          <p class="empty-state__message">No leads yet.</p>
+          <a href="lead-form.html" class="btn btn--gold">Add your first lead</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent properties -->
+    <div class="divider">✦</div>
+
+    <div class="section-heading">
+      <h2>Recent Properties</h2>
+      <a href="properties.html" class="btn btn--ghost btn--sm">View all</a>
+    </div>
+
+    <div id="recent-properties-wrap">
+      <div class="property-grid" id="recent-properties-grid">
+        <!-- populated by JS -->
+      </div>
+      <div id="recent-properties-empty" class="hidden">
+        <div class="empty-state" style="padding: var(--spacing-lg) 0;">
+          <span class="empty-state__ornament">⬡</span>
+          <p class="empty-state__message">No properties yet.</p>
+          <a href="property-form.html" class="btn btn--gold">Add your first property</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<!-- Scripts — order matters -->
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  // ── Boot ──────────────────────────────────────────────────────────────────
+  await App.init()
+
+  // Check encryption — redirect to settings if not set up or locked
+  const isSetUp = await Crypto.isSetUp()
+  if (!isSetUp) {
+    // First run — go to settings to set passphrase
+    window.location.href = 'settings.html?setup=1'
+    return
+  }
+  if (!Crypto.isUnlocked()) {
+    window.location.href = 'settings.html?unlock=1'
+    return
+  }
+
+  // ── Greeting ──────────────────────────────────────────────────────────────
+  const agentName = await DB.getSetting('agentName')
+  document.getElementById('greeting').textContent =
+    App.timeGreeting(agentName || '')
+
+  if (agentName) {
+    // Store name in sessionStorage for WhatsApp messages
+    sessionStorage.setItem('vesting_agent_name', agentName)
+  }
+
+  // ── Load all data ─────────────────────────────────────────────────────────
+  const [allLeads, allProperties, allInspections] =
+    await Promise.all([
+      Crypto.getAllDecrypted('leads'),
+      Crypto.getAllDecrypted('properties'),
+      Crypto.getAllDecrypted('inspections')
+    ])
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
+  const today     = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const todayStr  = today.toISOString().split('T')[0]
+
+  const overdue   = allLeads.filter(l => {
+    if (!l.followUpDate) return false
+    return new Date(l.followUpDate) < today
+  })
+
+  const dueToday  = allLeads.filter(l => {
+    if (!l.followUpDate) return false
+    const d = new Date(l.followUpDate)
+    d.setHours(0, 0, 0, 0)
+    return d.getTime() === today.getTime()
+  })
+
+  const activeProperties = allProperties.filter(p => p.status === 'active')
+
+  document.getElementById('stat-leads').textContent       = allLeads.length
+  document.getElementById('stat-properties').textContent  = activeProperties.length
+  document.getElementById('stat-inspections').textContent = allInspections.length
+  document.getElementById('stat-followups').textContent   = dueToday.length
+
+  const overdueSubEl = document.getElementById('stat-overdue-sub')
+  if (overdue.length > 0) {
+    overdueSubEl.textContent = `${overdue.length} overdue`
+    overdueSubEl.style.color = 'var(--md-danger)'
+    document.getElementById('stat-followups-card').style.borderColor = 'var(--md-warning)'
+  } else {
+    overdueSubEl.textContent = 'all up to date'
+  }
+
+  // ── Follow-ups ────────────────────────────────────────────────────────────
+  function renderFollowupItem (lead, cls) {
+    const phone   = App.formatPhone(lead.phone || '')
+    const dateStr = App.relativeTime(lead.followUpDate)
+
+    return `
+      <div class="followup-item followup-item--${cls}">
+        <div>
+          <p class="followup-item__name">${lead.name || '—'}</p>
+          <p class="followup-item__date followup-item__date--${cls}">${dateStr}</p>
+        </div>
+        <div class="flex gap-sm">
+          <a href="lead-form.html?id=${lead.id}" class="btn btn--ghost btn--sm">Edit</a>
+          ${phone
+            ? `<button class="btn btn--whatsapp btn--sm"
+                 onclick="App.whatsappLead(${JSON.stringify(lead).replace(/"/g, '&quot;')})">
+                 WhatsApp
+               </button>`
+            : ''}
+        </div>
+      </div>
+    `
+  }
+
+  const overdueWrap = document.getElementById('overdue-wrap')
+  const todayWrap   = document.getElementById('today-wrap')
+  const emptyWrap   = document.getElementById('followups-empty')
+
+  if (overdue.length > 0) {
+    overdueWrap.classList.remove('hidden')
+    document.getElementById('overdue-list').innerHTML =
+      overdue.map(l => renderFollowupItem(l, 'overdue')).join('')
+  }
+
+  if (dueToday.length > 0) {
+    todayWrap.classList.remove('hidden')
+    document.getElementById('today-list').innerHTML =
+      dueToday.map(l => renderFollowupItem(l, 'today')).join('')
+  }
+
+  if (overdue.length === 0 && dueToday.length === 0) {
+    emptyWrap.classList.remove('hidden')
+  }
+
+  // ── Recent leads (last 5, newest first) ──────────────────────────────────
+  const recentLeads = [...allLeads]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5)
+
+  const leadsBody  = document.getElementById('recent-leads-body')
+  const leadsEmpty = document.getElementById('recent-leads-empty')
+  const leadsTable = document.getElementById('recent-leads-wrap').querySelector('.table-wrap')
+
+  if (recentLeads.length === 0) {
+    leadsTable.classList.add('hidden')
+    leadsEmpty.classList.remove('hidden')
+  } else {
+    leadsBody.innerHTML = recentLeads.map(lead => `
+      <tr>
+        <td><strong>${lead.name || '—'}</strong></td>
+        <td>${App.formatPhone(lead.phone || '') || '—'}</td>
+        <td>${lead.propertyType || '—'}</td>
+        <td>${App.statusBadge(lead.status || 'New Lead')}</td>
+        <td class="${isOverdueClass(lead.followUpDate)}">
+          ${App.relativeTime(lead.followUpDate)}
+        </td>
+        <td>
+          <div class="td-actions">
+            <a href="lead-form.html?id=${lead.id}" class="btn btn--ghost btn--sm">Edit</a>
+            ${lead.phone
+              ? `<button class="btn btn--whatsapp btn--sm"
+                   onclick="App.whatsappLead(${JSON.stringify(lead).replace(/"/g, '&quot;')})">
+                   WA
+                 </button>`
+              : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('')
+  }
+
+  function isOverdueClass (dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    d.setHours(0, 0, 0, 0)
+    if (d < today)               return 'followup-item__date--overdue'
+    if (d.getTime() === today.getTime()) return 'followup-item__date--today'
+    return ''
+  }
+
+  // ── Recent properties (last 3, newest first) ──────────────────────────────
+  const recentProps  = [...allProperties]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 3)
+
+  const propsGrid  = document.getElementById('recent-properties-grid')
+  const propsEmpty = document.getElementById('recent-properties-empty')
+
+  if (recentProps.length === 0) {
+    propsGrid.classList.add('hidden')
+    propsEmpty.classList.remove('hidden')
+  } else {
+    propsGrid.innerHTML = recentProps.map(prop => `
+      <div class="property-card">
+        <div class="property-card__image">
+          ${prop.photoIds && prop.photoIds.length > 0
+            ? `<img src="#" alt="${prop.address}" id="prop-img-${prop.id}" />`
+            : `<span style="color:var(--md-muted);font-size:2rem;">⬡</span>`}
+        </div>
+        <div class="property-card__body">
+          <p class="property-card__address">${prop.address || '—'}, ${prop.suburb || ''}</p>
+          <p class="property-card__price">${prop.price || '—'}</p>
+          <div class="property-card__meta">
+            ${prop.bedrooms  ? `<span>🛏 ${prop.bedrooms}</span>`  : ''}
+            ${prop.bathrooms ? `<span>🚿 ${prop.bathrooms}</span>` : ''}
+            ${prop.garages   ? `<span>🚗 ${prop.garages}</span>`   : ''}
+            ${prop.size      ? `<span>${prop.size}m²</span>`       : ''}
+          </div>
+          ${App.statusBadge(prop.status || 'active')}
+        </div>
+        <div class="property-card__actions">
+          <a href="property-form.html?id=${prop.id}" class="btn btn--ghost btn--sm">Edit</a>
+          <a href="inspection-form.html?propertyId=${prop.id}" class="btn btn--ghost btn--sm">Inspect</a>
+        </div>
+      </div>
+    `).join('')
+
+    // Load first photo for each property that has one
+    recentProps.forEach(async prop => {
+      if (prop.photoIds && prop.photoIds.length > 0) {
+        try {
+          const photo = await DB.get('photos', prop.photoIds[0])
+          if (photo) {
+            const img = document.getElementById(`prop-img-${prop.id}`)
+            if (img) img.src = `data:${photo.mimeType};base64,${photo.data}`
+          }
+        } catch { /* photo not critical */ }
+      }
+    })
+  }
+
+  // ── PWA install prompt ────────────────────────────────────────────────────
+  let deferredInstallPrompt = null
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault()
+    deferredInstallPrompt = e
+    document.getElementById('install-banner').classList.remove('hidden')
+  })
+
+  document.getElementById('btn-install').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return
+    deferredInstallPrompt.prompt()
+    const { outcome } = await deferredInstallPrompt.userChoice
+    deferredInstallPrompt = null
+    document.getElementById('install-banner').classList.add('hidden')
+    if (outcome === 'accepted') {
+      App.toast('Vesting installed to your home screen.', 'success')
+    }
+  })
+
+  document.getElementById('btn-install-dismiss').addEventListener('click', () => {
+    document.getElementById('install-banner').classList.add('hidden')
+  })
+
+})()
+</script>
+
+</body>
+</html>

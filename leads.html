@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Leads — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <!-- Page header -->
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Leads</p>
+      <h1 class="page-header__title">Leads</h1>
+      <p class="page-header__subtitle">Buyers, renters and sellers in your pipeline.</p>
+      <div class="page-header__actions">
+        <a href="lead-form.html" class="btn btn--gold">+ New Lead</a>
+      </div>
+    </header>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search name, phone or email…"
+        autocomplete="off"
+      />
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="New Lead">New Lead</option>
+        <option value="Qualified">Qualified</option>
+        <option value="Viewing Scheduled">Viewing Scheduled</option>
+        <option value="Offer Pending">Offer Pending</option>
+        <option value="Closed">Closed</option>
+        <option value="Lost">Lost</option>
+      </select>
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="sale">Sale</option>
+        <option value="rental">Rental</option>
+        <option value="both">Both</option>
+      </select>
+      <select id="filter-source">
+        <option value="">All Sources</option>
+        <option value="walk-in">Walk-in</option>
+        <option value="online-ad">Online Ad</option>
+        <option value="property24">Property24</option>
+        <option value="referral">Referral</option>
+        <option value="cold-call">Cold Call</option>
+        <option value="social-media">Social Media</option>
+        <option value="show-house">Show House</option>
+        <option value="repeat-client">Repeat Client</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn btn--ghost btn--sm" id="btn-clear-filters">Clear</button>
+    </div>
+
+    <!-- Lead count -->
+    <p class="text-sm text-muted mb-md" id="lead-count"></p>
+
+    <!-- Table -->
+    <div class="table-wrap" id="leads-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Type</th>
+            <th>Budget</th>
+            <th>Status</th>
+            <th>Follow-up</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leads-tbody">
+          <!-- populated by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div id="leads-empty" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">◈</span>
+        <p class="empty-state__message">No leads found. Add your first lead to get started.</p>
+        <a href="lead-form.html" class="btn btn--gold">Add First Lead</a>
+      </div>
+    </div>
+
+    <!-- No results state -->
+    <div id="leads-no-results" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">◈</span>
+        <p class="empty-state__message">No leads match your search or filters.</p>
+        <button class="btn btn--ghost" id="btn-clear-filters-2">Clear filters</button>
+      </div>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+
+  // ── Auth guard ────────────────────────────────────────────────────────────
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let allLeads     = []
+  let filtered     = []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+  async function loadLeads () {
+    allLeads = await Crypto.getAllDecrypted('leads')
+    // Newest first
+    allLeads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    applyFilters()
+  }
+
+  // ── Filter & search ───────────────────────────────────────────────────────
+  function applyFilters () {
+    const q      = document.getElementById('search-input').value.trim().toLowerCase()
+    const status = document.getElementById('filter-status').value
+    const type   = document.getElementById('filter-type').value
+    const source = document.getElementById('filter-source').value
+
+    filtered = allLeads.filter(lead => {
+      if (status && lead.status !== status)           return false
+      if (type   && lead.propertyType !== type)       return false
+      if (source && lead.source !== source)           return false
+      if (q) {
+        const hay = [
+          lead.name  || '',
+          lead.phone || '',
+          lead.email || ''
+        ].join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+
+    renderTable()
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderTable () {
+    const tbody      = document.getElementById('leads-tbody')
+    const tableWrap  = document.getElementById('leads-table-wrap')
+    const emptyEl    = document.getElementById('leads-empty')
+    const noResults  = document.getElementById('leads-no-results')
+    const countEl    = document.getElementById('lead-count')
+
+    // Reset visibility
+    tableWrap.classList.add('hidden')
+    emptyEl.classList.add('hidden')
+    noResults.classList.add('hidden')
+
+    if (allLeads.length === 0) {
+      emptyEl.classList.remove('hidden')
+      countEl.textContent = ''
+      return
+    }
+
+    if (filtered.length === 0) {
+      noResults.classList.remove('hidden')
+      countEl.textContent = `0 of ${allLeads.length} leads`
+      return
+    }
+
+    tableWrap.classList.remove('hidden')
+    countEl.textContent = filtered.length === allLeads.length
+      ? App.pluralise(allLeads.length, 'lead')
+      : `${filtered.length} of ${allLeads.length} leads`
+
+    tbody.innerHTML = filtered.map(lead => {
+      const followUpClass = getFollowUpClass(lead.followUpDate)
+      const followUpText  = lead.followUpDate
+        ? App.relativeTime(lead.followUpDate)
+        : '—'
+
+      return `
+        <tr>
+          <td>
+            <strong>${esc(lead.name || '—')}</strong>
+            ${lead.email
+              ? `<br><span class="text-sm text-muted">${esc(lead.email)}</span>`
+              : ''}
+          </td>
+          <td>${esc(App.formatPhone(lead.phone || '')) || '—'}</td>
+          <td>${esc(lead.propertyType || '—')}</td>
+          <td>${esc(lead.budget || '—')}</td>
+          <td>${App.statusBadge(lead.status || 'New Lead')}</td>
+          <td class="${followUpClass}">${followUpText}</td>
+          <td>
+            <div class="td-actions">
+              <a href="lead-form.html?id=${lead.id}" class="btn btn--ghost btn--sm">Edit</a>
+              ${lead.phone
+                ? `<button
+                     class="btn btn--whatsapp btn--sm"
+                     data-lead-id="${lead.id}"
+                     onclick="handleWhatsApp('${lead.id}')">
+                     WA
+                   </button>`
+                : ''}
+              <button
+                class="btn btn--danger btn--sm"
+                onclick="handleDelete('${lead.id}', '${esc(lead.name || 'this lead')}')">
+                Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `
+    }).join('')
+  }
+
+  function getFollowUpClass (dateStr) {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    d.setHours(0, 0, 0, 0)
+    if (d < today)                   return 'followup-item__date--overdue'
+    if (d.getTime() === today.getTime()) return 'followup-item__date--today'
+    return ''
+  }
+
+  // ── HTML escape helper ────────────────────────────────────────────────────
+  function esc (str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+  }
+
+  // ── WhatsApp ──────────────────────────────────────────────────────────────
+  window.handleWhatsApp = function (id) {
+    const lead = allLeads.find(l => l.id === id)
+    if (lead) App.whatsappLead(lead)
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  window.handleDelete = async function (id, name) {
+    const confirmed = await App.confirm(
+      `Delete lead <strong>${name}</strong>? This cannot be undone.`,
+      'Delete',
+      'danger'
+    )
+    if (!confirmed) return
+
+    try {
+      await DB.delete('leads', id)
+      allLeads = allLeads.filter(l => l.id !== id)
+      applyFilters()
+      App.toast(`${name} deleted.`, 'success')
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not delete lead. Please try again.', 'danger')
+    }
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  const searchInput = document.getElementById('search-input')
+  searchInput.addEventListener('input', App.debounce(applyFilters, 250))
+
+  document.getElementById('filter-status').addEventListener('change', applyFilters)
+  document.getElementById('filter-type').addEventListener('change', applyFilters)
+  document.getElementById('filter-source').addEventListener('change', applyFilters)
+
+  function clearFilters () {
+    searchInput.value = ''
+    document.getElementById('filter-status').value = ''
+    document.getElementById('filter-type').value   = ''
+    document.getElementById('filter-source').value = ''
+    applyFilters()
+  }
+
+  document.getElementById('btn-clear-filters').addEventListener('click', clearFilters)
+  document.getElementById('btn-clear-filters-2').addEventListener('click', clearFilters)
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  await loadLeads()
+
+})()
+</script>
+
+</body>
+</html>

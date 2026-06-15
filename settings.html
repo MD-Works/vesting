@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Settings — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    #restore-input { display:none; }
+    .settings-warning { background:rgba(212,160,23,.1); border:1px solid var(--md-warning); border-radius:var(--md-radius); padding:var(--spacing-md); font-size:.875rem; color:var(--md-warning); margin-bottom:var(--spacing-md); }
+    .export-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:var(--spacing-sm); }
+    .about-stat { display:flex; justify-content:space-between; align-items:center; padding:var(--spacing-sm) 0; border-bottom:1px solid var(--md-border); font-size:.875rem; }
+    .about-stat:last-child { border-bottom:none; }
+    .about-stat__label { color:var(--md-muted); }
+    .about-stat__value { color:var(--md-cream); font-weight:500; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <nav id="vesting-nav"></nav>
+  <main class="page-content">
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Settings</p>
+      <h1 class="page-header__title">Settings</h1>
+      <p class="page-header__subtitle">Profile, encryption, export and backup.</p>
+    </header>
+
+    <!-- Setup screen -->
+    <div id="screen-setup" class="hidden">
+      <div class="form-section" style="max-width:480px;">
+        <h3 class="form-section__title">Welcome to Vesting</h3>
+        <p class="text-muted" style="margin-bottom:var(--spacing-lg);">Set a passphrase to protect your data. All records will be encrypted with AES-256 on your device. <strong>Keep this passphrase safe</strong> — it cannot be recovered if lost.</p>
+        <div class="form-grid" style="grid-template-columns:1fr;">
+          <div class="form-group">
+            <label for="setup-passphrase">Passphrase <span style="color:var(--md-danger)">*</span></label>
+            <input type="password" id="setup-passphrase" placeholder="Minimum 8 characters" autocomplete="new-password" />
+          </div>
+          <div class="form-group">
+            <label for="setup-confirm">Confirm Passphrase <span style="color:var(--md-danger)">*</span></label>
+            <input type="password" id="setup-confirm" placeholder="Repeat passphrase" autocomplete="new-password" />
+          </div>
+          <button type="button" class="btn btn--gold btn--full" id="btn-setup">Create Encrypted Workspace</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Unlock screen -->
+    <div id="screen-unlock" class="hidden">
+      <div class="form-section" style="max-width:480px;">
+        <h3 class="form-section__title">Unlock Vesting</h3>
+        <p class="text-muted" style="margin-bottom:var(--spacing-lg);">Enter your passphrase to decrypt and access your data.</p>
+        <div class="form-grid" style="grid-template-columns:1fr;">
+          <div class="form-group">
+            <label for="unlock-passphrase">Passphrase</label>
+            <input type="password" id="unlock-passphrase" placeholder="Your passphrase" autocomplete="current-password" />
+          </div>
+          <button type="button" class="btn btn--gold btn--full" id="btn-unlock">Unlock</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main settings -->
+    <div id="screen-settings" class="hidden">
+
+      <!-- 1. Profile -->
+      <div class="form-section">
+        <h3 class="form-section__title">1. Agent Profile</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="agent-name">Full Name</label>
+            <input type="text" id="agent-name" placeholder="Morney Deetlefs" autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="agent-email">Email Address</label>
+            <input type="email" id="agent-email" placeholder="morney@mdworks.co.za" autocomplete="email" />
+          </div>
+          <div class="form-group">
+            <label for="agent-phone">Phone Number</label>
+            <input type="tel" id="agent-phone" placeholder="+27 82 000 0000" autocomplete="tel" />
+          </div>
+        </div>
+        <button type="button" class="btn btn--gold" id="btn-save-profile" style="margin-top:var(--spacing-md);">Save Profile</button>
+      </div>
+
+      <!-- 2. Encryption -->
+      <div class="form-section">
+        <h3 class="form-section__title">2. Encryption</h3>
+        <div id="encryption-status-display" style="margin-bottom:var(--spacing-md);"></div>
+        <div class="settings-warning">⚠ Export a full backup before changing your passphrase. Data will be re-encrypted with the new passphrase.</div>
+        <details>
+          <summary class="btn btn--ghost" style="cursor:pointer;display:inline-flex;align-items:center;gap:var(--spacing-xs);">Change Passphrase</summary>
+          <div style="margin-top:var(--spacing-md);">
+            <div class="form-grid" style="grid-template-columns:1fr;">
+              <div class="form-group">
+                <label for="pass-old">Current Passphrase</label>
+                <input type="password" id="pass-old" placeholder="Current passphrase" autocomplete="current-password" />
+              </div>
+              <div class="form-group">
+                <label for="pass-new">New Passphrase</label>
+                <input type="password" id="pass-new" placeholder="Minimum 8 characters" autocomplete="new-password" />
+              </div>
+              <div class="form-group">
+                <label for="pass-confirm">Confirm New Passphrase</label>
+                <input type="password" id="pass-confirm" placeholder="Repeat new passphrase" autocomplete="new-password" />
+              </div>
+            </div>
+            <div id="pass-progress" class="hidden" style="margin-top:var(--spacing-sm);">
+              <p class="text-sm text-muted" id="pass-progress-msg">Re-encrypting data…</p>
+              <div class="progress-bar" style="margin-top:var(--spacing-xs);">
+                <div class="progress-bar__fill" id="pass-progress-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <button type="button" class="btn btn--danger" id="btn-change-pass" style="margin-top:var(--spacing-md);">Change Passphrase</button>
+          </div>
+        </details>
+        <div style="margin-top:var(--spacing-md);">
+          <button type="button" class="btn btn--ghost" id="btn-lock-session">🔒 Lock Session</button>
+          <p class="text-sm text-muted" style="margin-top:var(--spacing-xs);">Clears the key from memory. You will need your passphrase to unlock again.</p>
+        </div>
+      </div>
+
+      <!-- 3. Export -->
+      <div class="form-section">
+        <h3 class="form-section__title">3. Export Data</h3>
+        <p class="text-sm text-muted" style="margin-bottom:var(--spacing-md);">CSV exports open in Excel or Google Sheets. The full backup is encrypted — restore requires your passphrase.</p>
+        <div class="export-grid">
+          <button type="button" class="btn btn--ghost" id="btn-export-leads">↓ Export Leads (CSV)</button>
+          <button type="button" class="btn btn--ghost" id="btn-export-contacts">↓ Export Contacts (CSV)</button>
+          <button type="button" class="btn btn--ghost" id="btn-export-properties">↓ Export Properties (CSV)</button>
+          <button type="button" class="btn btn--gold" id="btn-full-backup">↓ Full Backup (JSON)</button>
+        </div>
+        <div class="divider" style="margin:var(--spacing-lg) 0;">✦</div>
+        <h4 style="margin-bottom:var(--spacing-sm);">Restore from Backup</h4>
+        <p class="text-sm text-muted" style="margin-bottom:var(--spacing-md);">Merges backup data with current data. Your passphrase must match the one used when the backup was created.</p>
+        <button type="button" class="btn btn--ghost" id="btn-restore">↑ Restore from Backup</button>
+        <input type="file" id="restore-input" accept=".json" />
+      </div>
+
+      <!-- 4. About -->
+      <div class="form-section">
+        <h3 class="form-section__title">4. About</h3>
+        <div>
+          <div class="about-stat"><span class="about-stat__label">App</span><span class="about-stat__value">Vesting by MD Works</span></div>
+          <div class="about-stat"><span class="about-stat__label">Version</span><span class="about-stat__value">1.0.0</span></div>
+          <div class="about-stat"><span class="about-stat__label">Last Backup</span><span class="about-stat__value" id="about-last-backup">Never</span></div>
+          <div class="about-stat"><span class="about-stat__label">Storage Used</span><span class="about-stat__value" id="about-storage">Calculating…</span></div>
+          <div class="about-stat"><span class="about-stat__label">Data Location</span><span class="about-stat__value">This device only (encrypted)</span></div>
+          <div class="about-stat"><span class="about-stat__label">Encryption</span><span class="about-stat__value">AES-256-GCM · PBKDF2 310k iterations</span></div>
+          <div class="about-stat"><span class="about-stat__label">Compliance</span><span class="about-stat__value">POPIA (South Africa)</span></div>
+        </div>
+        <div style="text-align:center;margin-top:var(--spacing-xl);padding-top:var(--spacing-lg);border-top:1px solid var(--md-border);">
+          <p style="font-family:'Cinzel',serif;color:var(--md-gold-lt);letter-spacing:.05em;font-size:1rem;">Vesting</p>
+          <p class="tagline" style="margin-top:4px;">Your practice. Your clients. Secured.</p>
+          <p class="text-sm text-muted" style="margin-top:var(--spacing-md);"><span style="color:var(--md-gold-dk);">✦</span> Powered by MD Works · Durban, South Africa <span style="color:var(--md-gold-dk);">✦</span></p>
+        </div>
+      </div>
+
+    </div>
+
+    <footer id="vesting-footer"></footer>
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script src="js/export.js"></script>
+<script>
+;(async () => {
+  await App.init()
+  const params     = new URLSearchParams(window.location.search)
+  const wantSetup  = params.get('setup')  === '1'
+  const wantUnlock = params.get('unlock') === '1'
+  const isSetUp    = await Crypto.isSetUp()
+  const unlocked   = Crypto.isUnlocked()
+
+  if (!isSetUp || wantSetup) {
+    document.getElementById('screen-setup').classList.remove('hidden')
+  } else if (!unlocked || wantUnlock) {
+    document.getElementById('screen-unlock').classList.remove('hidden')
+    document.getElementById('unlock-passphrase').focus()
+  } else {
+    await showMainSettings()
+  }
+
+  // ── Setup ─────────────────────────────────────────────────────────────────
+  document.getElementById('btn-setup').addEventListener('click', async () => {
+    const pass = document.getElementById('setup-passphrase').value
+    const conf = document.getElementById('setup-confirm').value
+    const btn  = document.getElementById('btn-setup')
+    if (!App.validate.passphrase(pass)) { App.form.error('setup-passphrase','Passphrase must be at least 8 characters.'); return }
+    if (pass !== conf) { App.form.error('setup-confirm','Passphrases do not match.'); return }
+    btn.disabled = true; btn.textContent = 'Setting up…'
+    try {
+      await Crypto.setup(pass)
+      App.toast('Workspace created. Welcome to Vesting.', 'success')
+      document.getElementById('screen-setup').classList.add('hidden')
+      setTimeout(() => { window.location.href = 'index.html' }, 1200)
+    } catch(err) {
+      App.toast('Setup failed: ' + err.message, 'danger')
+      btn.disabled = false; btn.textContent = 'Create Encrypted Workspace'
+    }
+  })
+  document.getElementById('setup-confirm').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btn-setup').click() })
+
+  // ── Unlock ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-unlock').addEventListener('click', async () => {
+    const pass = document.getElementById('unlock-passphrase').value
+    const btn  = document.getElementById('btn-unlock')
+    if (!pass) { App.form.error('unlock-passphrase','Please enter your passphrase.'); return }
+    btn.disabled = true; btn.textContent = 'Unlocking…'
+    try {
+      await Crypto.unlock(pass)
+      App.toast('Unlocked. Welcome back.', 'success')
+      setTimeout(() => { window.location.href = 'index.html' }, 600)
+    } catch(err) {
+      App.form.error('unlock-passphrase','Wrong passphrase. Please try again.')
+      App.toast('Wrong passphrase.', 'danger')
+      btn.disabled = false; btn.textContent = 'Unlock'
+      document.getElementById('unlock-passphrase').select()
+    }
+  })
+  document.getElementById('unlock-passphrase').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('btn-unlock').click() })
+
+  // ── Main settings ─────────────────────────────────────────────────────────
+  async function showMainSettings() {
+    document.getElementById('screen-settings').classList.remove('hidden')
+    await loadProfile(); await loadAbout(); showEncryptionStatus()
+  }
+
+  async function loadProfile() {
+    const [name,email,phone] = await Promise.all([DB.getSetting('agentName'),DB.getSetting('agentEmail'),DB.getSetting('agentPhone')])
+    if(name)  document.getElementById('agent-name').value  = name
+    if(email) document.getElementById('agent-email').value = email
+    if(phone) document.getElementById('agent-phone').value = phone
+  }
+
+  document.getElementById('btn-save-profile').addEventListener('click', async () => {
+    const name  = document.getElementById('agent-name').value.trim()
+    const email = document.getElementById('agent-email').value.trim()
+    const phone = document.getElementById('agent-phone').value.trim()
+    if(email && !App.validate.email(email)) { App.form.error('agent-email','Enter a valid email.'); return }
+    if(phone && !App.validate.phone(phone)) { App.form.error('agent-phone','Enter a valid SA number.'); return }
+    try {
+      await Promise.all([DB.setSetting('agentName',name),DB.setSetting('agentEmail',email),DB.setSetting('agentPhone',phone)])
+      if(name) sessionStorage.setItem('vesting_agent_name', name)
+      App.toast('Profile saved.', 'success')
+    } catch { App.toast('Could not save profile.', 'danger') }
+  })
+  App.form.liveValidate('agent-email'); App.form.liveValidate('agent-phone')
+
+  function showEncryptionStatus() {
+    const locked = !Crypto.isUnlocked()
+    document.getElementById('encryption-status-display').innerHTML = `
+      <div class="encryption-status encryption-status--${locked?'locked':'unlocked'}">
+        ${locked ? '🔒 Session locked — data encrypted at rest' : '🔓 Session active — data accessible'}
+      </div>`
+  }
+
+  document.getElementById('btn-lock-session').addEventListener('click', async () => {
+    const ok = await App.confirm('Lock this session? You will need your passphrase to continue.','Lock','danger')
+    if(!ok) return
+    Crypto.lock(); App.toast('Session locked.','gold')
+    setTimeout(() => { window.location.href = 'settings.html?unlock=1' }, 800)
+  })
+
+  document.getElementById('btn-change-pass').addEventListener('click', async () => {
+    const oldPass = document.getElementById('pass-old').value
+    const newPass = document.getElementById('pass-new').value
+    const conf    = document.getElementById('pass-confirm').value
+    const btn     = document.getElementById('btn-change-pass')
+    if(!oldPass) { App.form.error('pass-old','Enter your current passphrase.'); return }
+    if(!App.validate.passphrase(newPass)) { App.form.error('pass-new','New passphrase must be at least 8 characters.'); return }
+    if(newPass !== conf) { App.form.error('pass-confirm','Passphrases do not match.'); return }
+    const ok = await App.confirm('Change passphrase? All data will be re-encrypted. Backup first.','Change Passphrase','danger')
+    if(!ok) return
+    btn.disabled = true; btn.textContent = 'Re-encrypting…'
+    document.getElementById('pass-progress').classList.remove('hidden')
+    try {
+      await Crypto.changePassphrase(oldPass, newPass, (pct, store) => {
+        document.getElementById('pass-progress-bar').style.width = pct+'%'
+        document.getElementById('pass-progress-msg').textContent = `Re-encrypting ${store}… ${pct}%`
+      })
+      App.toast('Passphrase changed. All data re-encrypted.','success')
+      ;['pass-old','pass-new','pass-confirm'].forEach(id => document.getElementById(id).value='')
+      document.getElementById('pass-progress').classList.add('hidden')
+      document.getElementById('pass-progress-bar').style.width = '0%'
+    } catch(err) { App.toast(err.message||'Could not change passphrase.','danger') }
+    finally { btn.disabled=false; btn.textContent='Change Passphrase' }
+  })
+
+  document.getElementById('btn-export-leads').addEventListener('click',      () => Export.leadsCSV())
+  document.getElementById('btn-export-contacts').addEventListener('click',   () => Export.contactsCSV())
+  document.getElementById('btn-export-properties').addEventListener('click', () => Export.propertiesCSV())
+  document.getElementById('btn-full-backup').addEventListener('click',       () => Export.fullBackup())
+
+  document.getElementById('btn-restore').addEventListener('click', async () => {
+    const ok = await App.confirm('Restore from backup? Backup data will be merged with current data.','Restore','gold')
+    if(!ok) return
+    document.getElementById('restore-input').click()
+  })
+  document.getElementById('restore-input').addEventListener('change', async e => {
+    const file = e.target.files[0]
+    if(!file) return
+    try { await Export.restoreBackup(file); await loadAbout() } catch {}
+    e.target.value = ''
+  })
+
+  async function loadAbout() {
+    const lastBackup = await DB.getSetting('lastBackup')
+    document.getElementById('about-last-backup').textContent = lastBackup ? App.formatDate(lastBackup,true) : 'Never'
+    const est = await DB.storageEstimate()
+    document.getElementById('about-storage').textContent = est
+      ? `${(est.usage/1024/1024).toFixed(1)} MB used of ~${(est.quota/1024/1024).toFixed(0)} MB`
+      : 'Unavailable on this browser'
+  }
+})()
+</script>
+</body>
+</html>

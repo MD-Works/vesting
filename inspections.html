@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Inspections — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Inspections</p>
+      <h1 class="page-header__title">Inspections</h1>
+      <p class="page-header__subtitle">Entry, exit and new-listing inspection reports.</p>
+      <div class="page-header__actions">
+        <a href="inspection-form.html" class="btn btn--gold">+ New Inspection</a>
+      </div>
+    </header>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search address or agent…"
+        autocomplete="off"
+      />
+      <select id="filter-type">
+        <option value="">All Types</option>
+        <option value="entry">Entry</option>
+        <option value="exit">Exit</option>
+        <option value="new-listing">New Listing</option>
+      </select>
+      <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="draft">Draft</option>
+        <option value="completed">Completed</option>
+        <option value="pdf-generated">PDF Generated</option>
+      </select>
+      <button class="btn btn--ghost btn--sm" id="btn-clear-filters">Clear</button>
+    </div>
+
+    <!-- Count -->
+    <p class="text-sm text-muted mb-md" id="inspection-count"></p>
+
+    <!-- Table -->
+    <div class="table-wrap" id="inspections-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Agent</th>
+            <th>Tenant</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="inspections-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div id="inspections-empty" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">✓</span>
+        <p class="empty-state__message">No inspections yet. Start one from any property or create a new one here.</p>
+        <a href="inspection-form.html" class="btn btn--gold">New Inspection</a>
+      </div>
+    </div>
+
+    <!-- No results -->
+    <div id="inspections-no-results" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">✓</span>
+        <p class="empty-state__message">No inspections match your search or filters.</p>
+        <button class="btn btn--ghost" id="btn-clear-filters-2">Clear filters</button>
+      </div>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  let allInspections = []
+  let filtered       = []
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+  async function loadInspections () {
+    allInspections = await Crypto.getAllDecrypted('inspections')
+    allInspections.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+    applyFilters()
+  }
+
+  // ── Filter ────────────────────────────────────────────────────────────────
+  function applyFilters () {
+    const q      = document.getElementById('search-input').value.trim().toLowerCase()
+    const type   = document.getElementById('filter-type').value
+    const status = document.getElementById('filter-status').value
+
+    filtered = allInspections.filter(i => {
+      if (type   && i.type   !== type)   return false
+      if (status && i.status !== status) return false
+      if (q) {
+        const hay = [i.propertyAddress || '', i.agentName || '', i.tenantName || ''].join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+
+    renderTable()
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderTable () {
+    const tbody     = document.getElementById('inspections-tbody')
+    const tableWrap = document.getElementById('inspections-table-wrap')
+    const emptyEl   = document.getElementById('inspections-empty')
+    const noResults = document.getElementById('inspections-no-results')
+    const countEl   = document.getElementById('inspection-count')
+
+    tableWrap.classList.add('hidden')
+    emptyEl.classList.add('hidden')
+    noResults.classList.add('hidden')
+
+    if (allInspections.length === 0) {
+      emptyEl.classList.remove('hidden')
+      countEl.textContent = ''
+      return
+    }
+
+    if (filtered.length === 0) {
+      noResults.classList.remove('hidden')
+      countEl.textContent = `0 of ${allInspections.length} inspections`
+      return
+    }
+
+    tableWrap.classList.remove('hidden')
+    countEl.textContent = filtered.length === allInspections.length
+      ? App.pluralise(allInspections.length, 'inspection')
+      : `${filtered.length} of ${allInspections.length} inspections`
+
+    const typeLabels = { 'entry': 'Entry', 'exit': 'Exit', 'new-listing': 'New Listing' }
+
+    tbody.innerHTML = filtered.map(insp => `
+      <tr>
+        <td><strong>${esc(insp.propertyAddress || '—')}</strong></td>
+        <td><span class="badge badge--info">${esc(typeLabels[insp.type] || insp.type || '—')}</span></td>
+        <td>${insp.date ? App.formatDate(insp.date) : '—'}</td>
+        <td>${esc(insp.agentName || '—')}</td>
+        <td>${esc(insp.tenantName || '—')}</td>
+        <td>${App.statusBadge(insp.status || 'draft')}</td>
+        <td>
+          <div class="td-actions">
+            <a href="inspection-form.html?id=${insp.id}" class="btn btn--ghost btn--sm">Edit</a>
+            ${insp.status === 'completed' || insp.status === 'pdf-generated'
+              ? `<button class="btn btn--ghost btn--sm" onclick="handlePDF('${insp.id}')">PDF</button>`
+              : ''}
+            <button class="btn btn--danger btn--sm" onclick="handleDelete('${insp.id}', '${esc(insp.propertyAddress || 'this inspection')}')">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('')
+  }
+
+  function esc (str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  // ── PDF ───────────────────────────────────────────────────────────────────
+  window.handlePDF = function (id) {
+    // Open the inspection form in PDF mode
+    window.location.href = `inspection-form.html?id=${id}&pdf=1`
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  window.handleDelete = async function (id, address) {
+    const confirmed = await App.confirm(
+      `Delete inspection for <strong>${address}</strong>? This cannot be undone.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      // Remove inspection photos
+      const insp = allInspections.find(i => i.id === id)
+      if (insp) {
+        const allPhotoIds = []
+        if (insp.checklist) {
+          Object.values(insp.checklist).forEach(room => {
+            if (room.photoIds) allPhotoIds.push(...room.photoIds)
+          })
+        }
+        if (insp.meters) {
+          Object.values(insp.meters).forEach(m => {
+            if (m.photoId) allPhotoIds.push(m.photoId)
+          })
+        }
+        for (const pid of allPhotoIds) {
+          try { await DB.delete('photos', pid) } catch { /* skip */ }
+        }
+      }
+      await DB.delete('inspections', id)
+      allInspections = allInspections.filter(i => i.id !== id)
+      applyFilters()
+      App.toast('Inspection deleted.', 'success')
+    } catch {
+      App.toast('Could not delete inspection.', 'danger')
+    }
+  }
+
+  // ── Events ────────────────────────────────────────────────────────────────
+  document.getElementById('search-input').addEventListener('input', App.debounce(applyFilters, 250))
+  document.getElementById('filter-type').addEventListener('change', applyFilters)
+  document.getElementById('filter-status').addEventListener('change', applyFilters)
+
+  function clearFilters () {
+    document.getElementById('search-input').value  = ''
+    document.getElementById('filter-type').value   = ''
+    document.getElementById('filter-status').value = ''
+    applyFilters()
+  }
+  document.getElementById('btn-clear-filters').addEventListener('click', clearFilters)
+  document.getElementById('btn-clear-filters-2').addEventListener('click', clearFilters)
+
+  await loadInspections()
+
+})()
+</script>
+
+</body>
+</html>

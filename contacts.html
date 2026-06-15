@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Contacts — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Contacts</p>
+      <h1 class="page-header__title">Contacts</h1>
+      <p class="page-header__subtitle">Attorneys, contractors, colleagues and other professionals.</p>
+      <div class="page-header__actions">
+        <a href="contact-form.html" class="btn btn--gold">+ New Contact</a>
+      </div>
+    </header>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search name, company or phone…"
+        autocomplete="off"
+      />
+      <select id="filter-category">
+        <option value="">All Categories</option>
+        <option value="attorney">Attorney</option>
+        <option value="contractor">Contractor</option>
+        <option value="colleague">Colleague</option>
+        <option value="developer">Developer</option>
+        <option value="bank">Bank</option>
+        <option value="other">Other</option>
+      </select>
+      <button class="btn btn--ghost btn--sm" id="btn-clear-filters">Clear</button>
+    </div>
+
+    <!-- Count -->
+    <p class="text-sm text-muted mb-md" id="contact-count"></p>
+
+    <!-- Table -->
+    <div class="table-wrap" id="contacts-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Category</th>
+            <th>Phone</th>
+            <th>Last Contact</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="contacts-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Empty state -->
+    <div id="contacts-empty" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">◉</span>
+        <p class="empty-state__message">No contacts yet. Add attorneys, contractors and colleagues you work with.</p>
+        <a href="contact-form.html" class="btn btn--gold">Add First Contact</a>
+      </div>
+    </div>
+
+    <!-- No results -->
+    <div id="contacts-no-results" class="hidden">
+      <div class="empty-state">
+        <span class="empty-state__ornament">◉</span>
+        <p class="empty-state__message">No contacts match your search.</p>
+        <button class="btn btn--ghost" id="btn-clear-filters-2">Clear filters</button>
+      </div>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  let allContacts = []
+  let filtered    = []
+
+  // ── Load ──────────────────────────────────────────────────────────────────
+  async function loadContacts () {
+    allContacts = await Crypto.getAllDecrypted('contacts')
+    allContacts.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+    applyFilters()
+  }
+
+  // ── Filter ────────────────────────────────────────────────────────────────
+  function applyFilters () {
+    const q        = document.getElementById('search-input').value.trim().toLowerCase()
+    const category = document.getElementById('filter-category').value
+
+    filtered = allContacts.filter(c => {
+      if (category && c.category !== category) return false
+      if (q) {
+        const hay = [c.name || '', c.company || '', c.phone || ''].join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+
+    renderTable()
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  function renderTable () {
+    const tbody     = document.getElementById('contacts-tbody')
+    const tableWrap = document.getElementById('contacts-table-wrap')
+    const emptyEl   = document.getElementById('contacts-empty')
+    const noResults = document.getElementById('contacts-no-results')
+    const countEl   = document.getElementById('contact-count')
+
+    tableWrap.classList.add('hidden')
+    emptyEl.classList.add('hidden')
+    noResults.classList.add('hidden')
+
+    if (allContacts.length === 0) {
+      emptyEl.classList.remove('hidden')
+      countEl.textContent = ''
+      return
+    }
+
+    if (filtered.length === 0) {
+      noResults.classList.remove('hidden')
+      countEl.textContent = `0 of ${allContacts.length} contacts`
+      return
+    }
+
+    tableWrap.classList.remove('hidden')
+    countEl.textContent = filtered.length === allContacts.length
+      ? App.pluralise(allContacts.length, 'contact')
+      : `${filtered.length} of ${allContacts.length} contacts`
+
+    tbody.innerHTML = filtered.map(c => {
+      const phone        = App.formatPhone(c.phone || '')
+      const categoryLabel = c.category
+        ? c.category.charAt(0).toUpperCase() + c.category.slice(1)
+        : '—'
+
+      return `
+        <tr>
+          <td>
+            <strong>${esc(c.name || '—')}</strong>
+            ${c.email
+              ? `<br><span class="text-sm text-muted">${esc(c.email)}</span>`
+              : ''}
+          </td>
+          <td>${esc(c.company || '—')}</td>
+          <td><span class="badge badge--info">${esc(categoryLabel)}</span></td>
+          <td>${esc(phone) || '—'}</td>
+          <td>${c.lastContact ? App.formatDate(c.lastContact) : '—'}</td>
+          <td>
+            <div class="td-actions">
+              <a href="contact-form.html?id=${c.id}" class="btn btn--ghost btn--sm">Edit</a>
+              ${phone
+                ? `<a href="tel:${esc(phone.replace(/\s/g,''))}" class="btn btn--ghost btn--sm">Call</a>
+                   <button class="btn btn--whatsapp btn--sm" onclick="handleWhatsApp('${c.id}')">WA</button>`
+                : ''}
+              <button class="btn btn--danger btn--sm" onclick="handleDelete('${c.id}', '${esc(c.name || 'this contact')}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `
+    }).join('')
+  }
+
+  function esc (str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  }
+
+  // ── WhatsApp ──────────────────────────────────────────────────────────────
+  window.handleWhatsApp = function (id) {
+    const c = allContacts.find(x => x.id === id)
+    if (c && c.phone) App.whatsapp(c.phone)
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  window.handleDelete = async function (id, name) {
+    const confirmed = await App.confirm(
+      `Delete <strong>${name}</strong>? This cannot be undone.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      await DB.delete('contacts', id)
+      allContacts = allContacts.filter(c => c.id !== id)
+      applyFilters()
+      App.toast(`${name} deleted.`, 'success')
+    } catch {
+      App.toast('Could not delete contact.', 'danger')
+    }
+  }
+
+  // ── Event listeners ───────────────────────────────────────────────────────
+  document.getElementById('search-input').addEventListener('input', App.debounce(applyFilters, 250))
+  document.getElementById('filter-category').addEventListener('change', applyFilters)
+
+  function clearFilters () {
+    document.getElementById('search-input').value    = ''
+    document.getElementById('filter-category').value = ''
+    applyFilters()
+  }
+  document.getElementById('btn-clear-filters').addEventListener('click', clearFilters)
+  document.getElementById('btn-clear-filters-2').addEventListener('click', clearFilters)
+
+  await loadContacts()
+
+})()
+</script>
+
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Lead — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <!-- Page header -->
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Leads</p>
+      <h1 class="page-header__title" id="page-title">New Lead</h1>
+      <p class="page-header__subtitle" id="page-subtitle">Add a new buyer, renter or seller to your pipeline.</p>
+      <div class="page-header__actions">
+        <a href="leads.html" class="btn btn--ghost">← Back to Leads</a>
+        <button class="btn btn--whatsapp" id="btn-whatsapp-preview" style="display:none;">
+          Preview WhatsApp
+        </button>
+      </div>
+    </header>
+
+    <!-- Form -->
+    <form id="lead-form" novalidate>
+
+      <!-- ── Section 1: Contact Information ───────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Contact Information</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="name">Full Name <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="name" name="name" placeholder="John Doe" autocomplete="name" />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number <span style="color:var(--md-danger)">*</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="+27 82 123 4567" autocomplete="tel" />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="john@example.co.za" autocomplete="email" />
+          </div>
+
+          <div class="form-group">
+            <label for="preferredContact">Preferred Contact Method</label>
+            <select id="preferredContact" name="preferredContact">
+              <option value="">Select…</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="phone">Phone Call</option>
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="createdAt">Date Added</label>
+            <input type="date" id="createdAt" name="createdAt" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Section 2: Property Preferences ──────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Property Preferences</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="propertyType">Looking For</label>
+            <select id="propertyType" name="propertyType">
+              <option value="">Select…</option>
+              <option value="sale">To Buy (Sale)</option>
+              <option value="rental">To Rent</option>
+              <option value="both">Both</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="budget">Budget</label>
+            <input type="text" id="budget" name="budget" placeholder="e.g. R1.5M – R2.5M or R12 000/month" />
+          </div>
+
+          <div class="form-group">
+            <label for="bedrooms">Bedrooms</label>
+            <select id="bedrooms" name="bedrooms">
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5+">5+</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="bathrooms">Bathrooms</label>
+            <select id="bathrooms" name="bathrooms">
+              <option value="">Any</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4+">4+</option>
+            </select>
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="areas">Preferred Areas</label>
+            <input
+              type="text"
+              id="areas"
+              name="areas"
+              placeholder="e.g. Umhlanga, Ballito, Durban North (comma-separated)"
+            />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="otherRequirements">Other Requirements</label>
+            <textarea
+              id="otherRequirements"
+              name="otherRequirements"
+              rows="3"
+              placeholder="Pet-friendly, near schools, flatlet, pool, security estate…"
+            ></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Section 3: Financial & Personal ──────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Financial &amp; Personal</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="employment">Employment Status</label>
+            <select id="employment" name="employment">
+              <option value="">Select…</option>
+              <option value="employed">Employed</option>
+              <option value="self-employed">Self-employed</option>
+              <option value="business-owner">Business Owner</option>
+              <option value="retired">Retired</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="creditScore">Credit / Finance Status</label>
+            <select id="creditScore" name="creditScore">
+              <option value="">Select…</option>
+              <option value="pre-approved">Pre-approved</option>
+              <option value="cash">Cash Buyer</option>
+              <option value="excellent">Excellent Credit</option>
+              <option value="good">Good Credit</option>
+              <option value="fair">Fair Credit</option>
+              <option value="poor">Poor Credit</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="familySize">Family Size</label>
+            <input
+              type="number"
+              id="familySize"
+              name="familySize"
+              min="1"
+              max="20"
+              placeholder="e.g. 4"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="birthDate">Date of Birth</label>
+            <input type="date" id="birthDate" name="birthDate" />
+          </div>
+
+          <div class="form-group">
+            <label for="anniversary">Anniversary</label>
+            <input type="date" id="anniversary" name="anniversary" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Section 4: Lead Management ───────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">Lead Management</h3>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="status">Pipeline Status</label>
+            <select id="status" name="status">
+              <option value="New Lead">New Lead</option>
+              <option value="Qualified">Qualified</option>
+              <option value="Viewing Scheduled">Viewing Scheduled</option>
+              <option value="Offer Pending">Offer Pending</option>
+              <option value="Closed">Closed</option>
+              <option value="Lost">Lost</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="source">Lead Source</label>
+            <select id="source" name="source">
+              <option value="">Select…</option>
+              <option value="walk-in">Walk-in</option>
+              <option value="online-ad">Online Ad</option>
+              <option value="property24">Property24</option>
+              <option value="referral">Referral</option>
+              <option value="cold-call">Cold Call</option>
+              <option value="social-media">Social Media</option>
+              <option value="show-house">Show House</option>
+              <option value="repeat-client">Repeat Client</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="lastContact">Last Contacted</label>
+            <input type="date" id="lastContact" name="lastContact" />
+          </div>
+
+          <div class="form-group">
+            <label for="followUpDate">Follow-up Date</label>
+            <input type="date" id="followUpDate" name="followUpDate" />
+          </div>
+
+          <div class="form-group form-group--full">
+            <label for="notes">Notes &amp; Interaction History</label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows="5"
+              placeholder="Add notes about viewings, calls, preferences, follow-up history…"
+            ></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Form actions ──────────────────────────────────────────────── -->
+      <div class="flex gap-sm" style="flex-wrap:wrap;">
+        <button type="submit" class="btn btn--gold btn--lg" id="btn-save">
+          Save Lead
+        </button>
+        <a href="leads.html" class="btn btn--ghost btn--lg">Cancel</a>
+        <button
+          type="button"
+          class="btn btn--danger btn--lg"
+          id="btn-delete"
+          style="display:none; margin-left:auto;">
+          Delete Lead
+        </button>
+      </div>
+
+    </form>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  // ── Edit mode detection ───────────────────────────────────────────────────
+  const params  = new URLSearchParams(window.location.search)
+  const editId  = params.get('id')
+  const isEdit  = !!editId
+  let   existing = null
+
+  if (isEdit) {
+    document.getElementById('page-title').textContent    = 'Edit Lead'
+    document.getElementById('page-subtitle').textContent = 'Update lead details.'
+    document.getElementById('btn-save').textContent      = 'Update Lead'
+    document.getElementById('btn-delete').style.display  = 'inline-flex'
+    document.getElementById('btn-whatsapp-preview').style.display = 'inline-flex'
+
+    try {
+      existing = await Crypto.getDecrypted('leads', editId)
+      if (!existing) {
+        App.toast('Lead not found.', 'danger')
+        setTimeout(() => { window.location.href = 'leads.html' }, 1500)
+        return
+      }
+      populateForm(existing)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not load lead.', 'danger')
+    }
+  } else {
+    // Default date added = today
+    document.getElementById('createdAt').value = new Date().toISOString().split('T')[0]
+  }
+
+  // ── Populate form (edit mode) ─────────────────────────────────────────────
+  function populateForm (lead) {
+    const fields = [
+      'name','phone','email','preferredContact','propertyType',
+      'budget','bedrooms','bathrooms','otherRequirements',
+      'employment','creditScore','familySize','birthDate','anniversary',
+      'status','source','lastContact','followUpDate','notes'
+    ]
+    fields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && lead[f] !== undefined && lead[f] !== null) {
+        el.value = lead[f]
+      }
+    })
+
+    // Areas is stored as array, display as comma-separated
+    if (lead.areas && Array.isArray(lead.areas)) {
+      document.getElementById('areas').value = lead.areas.join(', ')
+    }
+
+    // createdAt — show as date only
+    if (lead.createdAt) {
+      document.getElementById('createdAt').value = lead.createdAt.split('T')[0]
+    }
+  }
+
+  // ── Live validation attachment ────────────────────────────────────────────
+  const liveFields = ['name','phone','email','followUpDate']
+  liveFields.forEach(id => App.form.liveValidate(id))
+
+  // ── Validation ────────────────────────────────────────────────────────────
+  function validateForm () {
+    const errors = []
+    App.form.clearAll('lead-form')
+
+    const name   = document.getElementById('name').value.trim()
+    const phone  = document.getElementById('phone').value.trim()
+    const email  = document.getElementById('email').value.trim()
+    const follow = document.getElementById('followUpDate').value
+
+    if (!App.validate.required(name)) {
+      App.form.error('name', 'Full name is required.')
+      errors.push('Full name is required.')
+    }
+
+    if (!App.validate.required(phone)) {
+      App.form.error('phone', 'Phone number is required.')
+      errors.push('Phone number is required.')
+    } else if (!App.validate.phone(phone)) {
+      App.form.error('phone', 'Enter a valid South African number (e.g. 082 123 4567).')
+      errors.push('Phone number must be a valid SA number.')
+    }
+
+    if (email && !App.validate.email(email)) {
+      App.form.error('email', 'Enter a valid email address.')
+      errors.push('Email address is not valid.')
+    }
+
+    if (follow && !App.validate.futureOrToday(follow)) {
+      App.form.error('followUpDate', 'Follow-up date cannot be in the past.')
+      errors.push('Follow-up date cannot be in the past.')
+    }
+
+    if (errors.length > 0) {
+      App.form.showBanner('lead-form', errors)
+    }
+
+    return errors.length === 0
+  }
+
+  // ── Collect form data ─────────────────────────────────────────────────────
+  function collectFormData () {
+    const areasRaw = document.getElementById('areas').value.trim()
+    const areas    = areasRaw
+      ? areasRaw.split(',').map(a => a.trim()).filter(Boolean)
+      : []
+
+    const createdAtRaw = document.getElementById('createdAt').value
+    const now          = new Date().toISOString()
+
+    return {
+      name:              document.getElementById('name').value.trim(),
+      phone:             document.getElementById('phone').value.trim(),
+      email:             document.getElementById('email').value.trim(),
+      preferredContact:  document.getElementById('preferredContact').value,
+      propertyType:      document.getElementById('propertyType').value,
+      budget:            document.getElementById('budget').value.trim(),
+      bedrooms:          document.getElementById('bedrooms').value,
+      bathrooms:         document.getElementById('bathrooms').value,
+      areas,
+      otherRequirements: document.getElementById('otherRequirements').value.trim(),
+      employment:        document.getElementById('employment').value,
+      creditScore:       document.getElementById('creditScore').value,
+      familySize:        parseInt(document.getElementById('familySize').value) || null,
+      birthDate:         document.getElementById('birthDate').value || null,
+      anniversary:       document.getElementById('anniversary').value || null,
+      status:            document.getElementById('status').value || 'New Lead',
+      source:            document.getElementById('source').value,
+      lastContact:       document.getElementById('lastContact').value || null,
+      followUpDate:      document.getElementById('followUpDate').value || null,
+      notes:             document.getElementById('notes').value.trim(),
+      createdAt:         createdAtRaw ? new Date(createdAtRaw).toISOString() : now,
+      updatedAt:         now
+    }
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  document.getElementById('lead-form').addEventListener('submit', async e => {
+    e.preventDefault()
+
+    if (!validateForm()) return
+
+    const btn = document.getElementById('btn-save')
+    btn.disabled    = true
+    btn.textContent = 'Saving…'
+
+    try {
+      const data = collectFormData()
+
+      if (isEdit) {
+        data.id        = editId
+        data.createdAt = existing.createdAt // preserve original created date
+        await Crypto.putEncrypted('leads', data)
+        App.toast('Lead updated.', 'success')
+      } else {
+        data.id = App.uuid()
+        await Crypto.putEncrypted('leads', data)
+        App.toast('Lead saved.', 'success')
+      }
+
+      setTimeout(() => { window.location.href = 'leads.html' }, 800)
+
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not save lead. Please try again.', 'danger')
+      btn.disabled    = false
+      btn.textContent = isEdit ? 'Update Lead' : 'Save Lead'
+    }
+  })
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const name      = document.getElementById('name').value.trim() || 'this lead'
+    const confirmed = await App.confirm(
+      `Delete <strong>${name}</strong>? This cannot be undone.`,
+      'Delete',
+      'danger'
+    )
+    if (!confirmed) return
+
+    try {
+      await DB.delete('leads', editId)
+      App.toast(`${name} deleted.`, 'success')
+      setTimeout(() => { window.location.href = 'leads.html' }, 800)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not delete lead.', 'danger')
+    }
+  })
+
+  // ── WhatsApp preview ──────────────────────────────────────────────────────
+  document.getElementById('btn-whatsapp-preview').addEventListener('click', () => {
+    const data = collectFormData()
+    if (!data.phone) {
+      App.toast('Add a phone number first.', 'warning')
+      return
+    }
+    App.whatsappLead(data)
+  })
+
+})()
+</script>
+
+</body>
+</html>

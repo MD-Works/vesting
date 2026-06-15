@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Inspection — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .sig-canvas {
+      border: 1px solid var(--md-border-lt);
+      border-radius: var(--md-radius);
+      background: var(--md-panel);
+      cursor: crosshair;
+      display: block;
+      width: 100%;
+      height: 160px;
+      touch-action: none;
+    }
+
+    .sig-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+    }
+
+    .sig-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+      align-items: center;
+    }
+
+    .sig-signed {
+      font-size: .75rem;
+      color: var(--md-success);
+    }
+
+    .room-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: var(--spacing-xs);
+      margin-top: var(--spacing-sm);
+    }
+
+    .room-photo-thumb {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: var(--md-radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--md-border);
+    }
+
+    .room-photo-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .room-photo-thumb__remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(0,0,0,.75);
+      border: none;
+      border-radius: 50%;
+      color: var(--md-danger);
+      width: 20px;
+      height: 20px;
+      font-size: .8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .room-photo-thumb:hover .room-photo-thumb__remove { opacity: 1; }
+
+    .room-add-photo {
+      aspect-ratio: 4/3;
+      border: 1px dashed var(--md-border-lt);
+      border-radius: var(--md-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--md-muted);
+      font-size: 1.2rem;
+      transition: all var(--transition);
+    }
+
+    .room-add-photo:hover {
+      border-color: var(--md-gold);
+      color: var(--md-gold);
+    }
+
+    /* PDF print styles */
+    @media print {
+      .no-print { display: none !important; }
+      .page-content { padding: 0; margin: 0; }
+      .form-section { border: 1px solid #ccc; page-break-inside: avoid; }
+      body { background: white; color: black; font-size: 12px; }
+      h1, h2, h3, h4 { color: black; }
+      .checklist-item { border: 1px solid #ccc; }
+      .sig-canvas { border: 1px solid #999; background: white; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav" class="no-print"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header no-print">
+      <p class="page-header__eyebrow">Vesting · Inspections</p>
+      <h1 class="page-header__title" id="page-title">New Inspection</h1>
+      <p class="page-header__subtitle" id="address-preview">Complete the form below.</p>
+      <div class="page-header__actions">
+        <a href="inspections.html" class="btn btn--ghost">← Back</a>
+        <button type="button" class="btn btn--gold" id="btn-generate-pdf">Generate PDF</button>
+      </div>
+    </header>
+
+    <form id="inspection-form" novalidate>
+
+      <!-- ── 1. Property & Type ─────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">1. Property &amp; Inspection Details</h3>
+        <div class="form-grid">
+
+          <div class="form-group form-group--full">
+            <label for="propertyAddress">Property Address <span style="color:var(--md-danger)">*</span></label>
+            <input type="text" id="propertyAddress" placeholder="12 Beach Road, Umhlanga Rocks" />
+            <p class="text-sm text-muted" style="margin-top:4px;">
+              Or <a href="#" id="link-select-property">select from your properties ▾</a>
+            </p>
+            <select id="property-select" style="display:none; margin-top:var(--spacing-sm);">
+              <option value="">— Select a property —</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Inspection Type <span style="color:var(--md-danger)">*</span></label>
+            <select id="type">
+              <option value="">Select…</option>
+              <option value="entry">Entry Inspection</option>
+              <option value="exit">Exit Inspection</option>
+              <option value="new-listing">New Listing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="date">Inspection Date <span style="color:var(--md-danger)">*</span></label>
+            <input type="date" id="date" />
+          </div>
+
+          <div class="form-group">
+            <label for="agentName">Agent Name</label>
+            <input type="text" id="agentName" placeholder="Your full name" />
+          </div>
+
+          <div class="form-group">
+            <label for="tenantName">Tenant / Occupant Name</label>
+            <input type="text" id="tenantName" placeholder="John Doe" />
+          </div>
+
+          <div class="form-group">
+            <label for="tenantPhone">Tenant Phone</label>
+            <input type="tel" id="tenantPhone" placeholder="+27 82 000 0000" />
+          </div>
+
+          <div class="form-group">
+            <label for="witness1">Witness 1</label>
+            <input type="text" id="witness1" placeholder="Full name" />
+          </div>
+
+          <div class="form-group">
+            <label for="witness2">Witness 2 (optional)</label>
+            <input type="text" id="witness2" placeholder="Full name" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 2. Room-by-Room Checklist ─────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">2. Room-by-Room Checklist</h3>
+        <div id="checklist-container">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── 3. Meter Readings ──────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">3. Meter Readings</h3>
+        <div class="meter-grid" id="meter-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── 4. General Notes ───────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">4. General Notes</h3>
+        <div class="form-group">
+          <label for="generalNotes">Additional observations, keys handed over, special conditions…</label>
+          <textarea id="generalNotes" rows="5" placeholder="e.g. 2 keys handed over, remote for gate provided, stoep light not working…"></textarea>
+        </div>
+      </div>
+
+      <!-- ── 5. All Photos ──────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">5. Photo Summary</h3>
+        <p class="text-sm text-muted mb-md">All photos attached to this inspection, grouped by room.</p>
+        <div id="all-photos-grid"></div>
+      </div>
+
+      <!-- ── 6. Signatures ──────────────────────────────────────────────── -->
+      <div class="form-section">
+        <h3 class="form-section__title">6. Signatures</h3>
+        <p class="text-sm text-muted mb-md">Draw signatures in the boxes below. Use a stylus or finger on mobile.</p>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:var(--spacing-lg);">
+
+          <div class="sig-block">
+            <label>Agent Signature</label>
+            <canvas class="sig-canvas" id="sig-agent" width="400" height="160"></canvas>
+            <div class="sig-actions">
+              <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('agent')">Clear</button>
+              <span class="sig-signed" id="sig-agent-status"></span>
+            </div>
+          </div>
+
+          <div class="sig-block">
+            <label>Tenant / Occupant Signature</label>
+            <canvas class="sig-canvas" id="sig-tenant" width="400" height="160"></canvas>
+            <div class="sig-actions">
+              <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('tenant')">Clear</button>
+              <span class="sig-signed" id="sig-tenant-status"></span>
+            </div>
+          </div>
+
+          <div class="sig-block">
+            <label>Witness 1 Signature</label>
+            <canvas class="sig-canvas" id="sig-witness1" width="400" height="160"></canvas>
+            <div class="sig-actions">
+              <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('witness1')">Clear</button>
+              <span class="sig-signed" id="sig-witness1-status"></span>
+            </div>
+          </div>
+
+          <div class="sig-block">
+            <label>Witness 2 Signature <span class="text-muted">(optional)</span></label>
+            <canvas class="sig-canvas" id="sig-witness2" width="400" height="160"></canvas>
+            <div class="sig-actions">
+              <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('witness2')">Clear</button>
+              <span class="sig-signed" id="sig-witness2-status"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Form actions ───────────────────────────────────────────────── -->
+      <div class="flex gap-sm no-print" style="flex-wrap:wrap;">
+        <button type="submit" class="btn btn--gold btn--lg" id="btn-save">Save as Draft</button>
+        <button type="button" class="btn btn--success btn--lg" id="btn-complete">Mark Complete</button>
+        <a href="inspections.html" class="btn btn--ghost btn--lg">Cancel</a>
+        <button type="button" class="btn btn--danger btn--lg" id="btn-delete" style="display:none;margin-left:auto;">Delete</button>
+      </div>
+
+    </form>
+
+    <footer id="vesting-footer" class="no-print"></footer>
+
+  </main>
+</div>
+
+<!-- Hidden file inputs per room (created dynamically) -->
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+  const ready = await App.requireUnlock()
+  if (!ready) return
+
+  // ── Constants ─────────────────────────────────────────────────────────────
+  const ROOMS = [
+    { key: 'lounge',   label: 'Lounge / Living Room' },
+    { key: 'kitchen',  label: 'Kitchen' },
+    { key: 'mainBed',  label: 'Main Bedroom' },
+    { key: 'bed2',     label: 'Bedroom 2' },
+    { key: 'bed3',     label: 'Bedroom 3' },
+    { key: 'bathroom', label: 'Bathroom / En-suite' },
+    { key: 'garage',   label: 'Garage / Parking' },
+    { key: 'garden',   label: 'Garden / Outdoor' },
+    { key: 'exterior', label: 'Exterior / Building' }
+  ]
+
+  const METERS = ['electricity', 'water', 'gas']
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  const params    = new URLSearchParams(window.location.search)
+  const editId    = params.get('id')
+  const pdfMode   = params.get('pdf') === '1'
+  const presetPropId = params.get('propertyId')
+  const isEdit    = !!editId
+  let   existing  = null
+
+  // checklist photo state: { roomKey: [{ id, data, mimeType, isNew }] }
+  const roomPhotos  = {}
+  ROOMS.forEach(r => { roomPhotos[r.key] = [] })
+
+  // meter photo state: { meter: { id, data, mimeType, isNew } | null }
+  const meterPhotos = { electricity: null, water: null, gas: null }
+
+  // ── Edit mode ─────────────────────────────────────────────────────────────
+  if (isEdit) {
+    document.getElementById('page-title').textContent = 'Edit Inspection'
+    document.getElementById('btn-delete').style.display = 'inline-flex'
+
+    try {
+      existing = await Crypto.getDecrypted('inspections', editId)
+      if (!existing) {
+        App.toast('Inspection not found.', 'danger')
+        setTimeout(() => { window.location.href = 'inspections.html' }, 1500)
+        return
+      }
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not load inspection.', 'danger')
+    }
+  }
+
+  // ── Load agent name default ───────────────────────────────────────────────
+  const agentName = await DB.getSetting('agentName')
+  if (agentName && !isEdit) {
+    document.getElementById('agentName').value = agentName
+  }
+
+  // ── Default date = today ──────────────────────────────────────────────────
+  if (!isEdit) {
+    document.getElementById('date').value = new Date().toISOString().split('T')[0]
+  }
+
+  // ── Property selector ─────────────────────────────────────────────────────
+  const allProperties = await Crypto.getAllDecrypted('properties')
+
+  const propSelect = document.getElementById('property-select')
+  allProperties.forEach(p => {
+    const opt = document.createElement('option')
+    opt.value       = p.id
+    opt.textContent = `${p.address}${p.suburb ? ', ' + p.suburb : ''}`
+    propSelect.appendChild(opt)
+  })
+
+  document.getElementById('link-select-property').addEventListener('click', e => {
+    e.preventDefault()
+    propSelect.style.display = propSelect.style.display === 'none' ? 'block' : 'none'
+  })
+
+  propSelect.addEventListener('change', () => {
+    const prop = allProperties.find(p => p.id === propSelect.value)
+    if (prop) {
+      const addr = [prop.address, prop.suburb, prop.city].filter(Boolean).join(', ')
+      document.getElementById('propertyAddress').value = addr
+      document.getElementById('address-preview').textContent = addr
+    }
+  })
+
+  // Pre-select property from URL param
+  if (presetPropId) {
+    const prop = allProperties.find(p => p.id === presetPropId)
+    if (prop) {
+      const addr = [prop.address, prop.suburb, prop.city].filter(Boolean).join(', ')
+      document.getElementById('propertyAddress').value = addr
+      document.getElementById('address-preview').textContent = addr
+      propSelect.value = presetPropId
+    }
+  }
+
+  // Live address preview
+  document.getElementById('propertyAddress').addEventListener('input', () => {
+    const v = document.getElementById('propertyAddress').value.trim()
+    document.getElementById('address-preview').textContent = v || 'Complete the form below.'
+  })
+
+  // ── Render checklist ──────────────────────────────────────────────────────
+  function renderChecklist (savedChecklist = {}) {
+    const container = document.getElementById('checklist-container')
+    container.innerHTML = ''
+
+    ROOMS.forEach(room => {
+      const saved = savedChecklist[room.key] || {}
+      const cond  = saved.condition || ''
+      const notes = saved.notes || ''
+
+      const item = document.createElement('div')
+      item.className  = 'checklist-item'
+      item.dataset.room = room.key
+      item.innerHTML = `
+        <div class="checklist-item__header">
+          <span class="checklist-item__room">${room.label}</span>
+          <div class="condition-radios">
+            ${['good','fair','poor'].map(c => `
+              <label class="condition-radio condition-radio--${c}">
+                <input type="radio" name="cond-${room.key}" value="${c}" ${cond === c ? 'checked' : ''} />
+                ${c.charAt(0).toUpperCase() + c.slice(1)}
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="notes-${room.key}">Notes</label>
+          <textarea id="notes-${room.key}" rows="2" placeholder="Condition details, damage, repairs needed…">${notes}</textarea>
+        </div>
+        <div>
+          <label style="margin-bottom:var(--spacing-xs);">Photos</label>
+          <div class="room-photo-grid" id="room-photos-${room.key}">
+            <div class="room-add-photo" onclick="triggerRoomPhoto('${room.key}')" title="Add photo">+</div>
+          </div>
+          <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple style="display:none;" />
+        </div>
+      `
+      container.appendChild(item)
+
+      // Handle room photo input
+      document.getElementById(`room-photo-input-${room.key}`)
+        .addEventListener('change', e => handleRoomPhotoInput(e, room.key))
+
+      // Load existing photos for this room
+      if (saved.photoIds && saved.photoIds.length > 0) {
+        saved.photoIds.forEach(async pid => {
+          try {
+            const photo = await DB.get('photos', pid)
+            if (photo) {
+              roomPhotos[room.key].push({ id: pid, data: photo.data, mimeType: photo.mimeType, isNew: false })
+              addRoomThumb(room.key, pid, `data:${photo.mimeType};base64,${photo.data}`, false)
+            }
+          } catch { /* skip */ }
+        })
+      }
+    })
+  }
+
+  // ── Room photo helpers ────────────────────────────────────────────────────
+  window.triggerRoomPhoto = function (roomKey) {
+    document.getElementById(`room-photo-input-${roomKey}`).click()
+  }
+
+  async function handleRoomPhotoInput (e, roomKey) {
+    const files = Array.from(e.target.files)
+    for (const file of files) {
+      if (!file.type.startsWith('image/')) continue
+      try {
+        const base64 = await fileToBase64(file)
+        const id     = App.uuid()
+        roomPhotos[roomKey].push({ id, data: base64, mimeType: file.type, isNew: true })
+        addRoomThumb(roomKey, id, `data:${file.type};base64,${base64}`, true)
+      } catch { App.toast('Could not read photo.', 'danger') }
+    }
+    e.target.value = ''
+    updatePhotoSummary()
+  }
+
+  function addRoomThumb (roomKey, id, src, isNew) {
+    const grid    = document.getElementById(`room-photos-${roomKey}`)
+    const addBtn  = grid.querySelector('.room-add-photo')
+    const thumb   = document.createElement('div')
+    thumb.className  = 'room-photo-thumb'
+    thumb.dataset.id = id
+    thumb.innerHTML  = `
+      <img src="${src}" alt="Room photo" />
+      <button type="button" class="room-photo-thumb__remove"
+        onclick="removeRoomPhoto('${roomKey}','${id}',${isNew})">&times;</button>
+    `
+    grid.insertBefore(thumb, addBtn)
+  }
+
+  window.removeRoomPhoto = function (roomKey, id, isNew) {
+    document.querySelector(`#room-photos-${roomKey} [data-id="${id}"]`)?.remove()
+    roomPhotos[roomKey] = roomPhotos[roomKey].filter(p => p.id !== id)
+    if (!isNew) { DB.delete('photos', id).catch(() => {}) }
+    updatePhotoSummary()
+  }
+
+  // ── Meter readings ────────────────────────────────────────────────────────
+  function renderMeters (savedMeters = {}) {
+    const grid = document.getElementById('meter-grid')
+    grid.innerHTML = ''
+
+    METERS.forEach(meter => {
+      const saved   = savedMeters[meter] || {}
+      const reading = saved.reading || ''
+
+      const card = document.createElement('div')
+      card.className = 'meter-card'
+      card.innerHTML = `
+        <div class="form-group">
+          <label for="meter-${meter}">${meter.charAt(0).toUpperCase() + meter.slice(1)} Meter</label>
+          <input type="text" id="meter-${meter}" value="${reading}" placeholder="e.g. 12345.6 kWh" />
+        </div>
+        <div style="margin-top:var(--spacing-sm);">
+          <div class="room-photo-grid" id="meter-photo-${meter}">
+            <div class="room-add-photo" onclick="triggerMeterPhoto('${meter}')" title="Photograph meter">📷</div>
+          </div>
+          <input type="file" id="meter-photo-input-${meter}" accept="image/*" style="display:none;" />
+        </div>
+      `
+      grid.appendChild(card)
+
+      document.getElementById(`meter-photo-input-${meter}`)
+        .addEventListener('change', e => handleMeterPhotoInput(e, meter))
+
+      // Load existing meter photo
+      if (saved.photoId) {
+        DB.get('photos', saved.photoId).then(photo => {
+          if (photo) {
+            meterPhotos[meter] = { id: saved.photoId, data: photo.data, mimeType: photo.mimeType, isNew: false }
+            addMeterThumb(meter, saved.photoId, `data:${photo.mimeType};base64,${photo.data}`)
+          }
+        }).catch(() => {})
+      }
+    })
+  }
+
+  window.triggerMeterPhoto = function (meter) {
+    document.getElementById(`meter-photo-input-${meter}`).click()
+  }
+
+  async function handleMeterPhotoInput (e, meter) {
+    const file = e.target.files[0]
+    if (!file) return
+    try {
+      // Remove old meter photo
+      if (meterPhotos[meter] && !meterPhotos[meter].isNew) {
+        DB.delete('photos', meterPhotos[meter].id).catch(() => {})
+      }
+      const base64 = await fileToBase64(file)
+      const id     = App.uuid()
+      meterPhotos[meter] = { id, data: base64, mimeType: file.type, isNew: true }
+      // Clear previous thumb
+      const grid = document.getElementById(`meter-photo-${meter}`)
+      grid.querySelectorAll('.room-photo-thumb').forEach(t => t.remove())
+      addMeterThumb(meter, id, `data:${file.type};base64,${base64}`)
+    } catch { App.toast('Could not read photo.', 'danger') }
+    e.target.value = ''
+  }
+
+  function addMeterThumb (meter, id, src) {
+    const grid   = document.getElementById(`meter-photo-${meter}`)
+    const addBtn = grid.querySelector('.room-add-photo')
+    const thumb  = document.createElement('div')
+    thumb.className  = 'room-photo-thumb'
+    thumb.dataset.id = id
+    thumb.innerHTML  = `<img src="${src}" alt="Meter photo" />`
+    grid.insertBefore(thumb, addBtn)
+  }
+
+  // ── Photo summary ─────────────────────────────────────────────────────────
+  function updatePhotoSummary () {
+    const grid = document.getElementById('all-photos-grid')
+    grid.innerHTML = ''
+
+    let total = 0
+    ROOMS.forEach(room => {
+      const photos = roomPhotos[room.key]
+      if (!photos.length) return
+      total += photos.length
+
+      const section = document.createElement('div')
+      section.style.marginBottom = 'var(--spacing-md)'
+      section.innerHTML = `<p class="text-sm" style="color:var(--md-gold-dk);margin-bottom:var(--spacing-xs);font-family:'Syne Mono',monospace;text-transform:uppercase;letter-spacing:.2em;font-size:.65rem;">${room.label}</p>`
+
+      const thumbGrid = document.createElement('div')
+      thumbGrid.className = 'photo-gallery'
+      photos.forEach(p => {
+        const thumb = document.createElement('div')
+        thumb.className = 'photo-thumb'
+        thumb.innerHTML = `<img src="data:${p.mimeType};base64,${p.data}" alt="${room.label}" />`
+        thumbGrid.appendChild(thumb)
+      })
+      section.appendChild(thumbGrid)
+      grid.appendChild(section)
+    })
+
+    if (total === 0) {
+      grid.innerHTML = '<p class="text-sm text-muted">No photos added yet. Use the camera icons in each room above.</p>'
+    }
+  }
+
+  // ── Signature pads ────────────────────────────────────────────────────────
+  const sigPads = {}
+
+  function initSignaturePad (key) {
+    const canvas = document.getElementById(`sig-${key}`)
+    const ctx    = canvas.getContext('2d')
+    let drawing  = false
+    let lastX = 0, lastY = 0
+
+    function getPos (e) {
+      const rect = canvas.getBoundingClientRect()
+      const src  = e.touches ? e.touches[0] : e
+      return {
+        x: (src.clientX - rect.left) * (canvas.width  / rect.width),
+        y: (src.clientY - rect.top)  * (canvas.height / rect.height)
+      }
+    }
+
+    ctx.strokeStyle = '#e8c87a'
+    ctx.lineWidth   = 2
+    ctx.lineCap     = 'round'
+    ctx.lineJoin    = 'round'
+
+    canvas.addEventListener('mousedown',  e => { drawing = true;  const p = getPos(e); lastX = p.x; lastY = p.y })
+    canvas.addEventListener('mousemove',  e => { if (!drawing) return; draw(e) })
+    canvas.addEventListener('mouseup',    () => { drawing = false; markSigned(key) })
+    canvas.addEventListener('mouseleave', () => { drawing = false })
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true;  const p = getPos(e); lastX = p.x; lastY = p.y }, { passive: false })
+    canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; draw(e) }, { passive: false })
+    canvas.addEventListener('touchend',   e => { e.preventDefault(); drawing = false; markSigned(key) }, { passive: false })
+
+    function draw (e) {
+      const p = getPos(e)
+      ctx.beginPath()
+      ctx.moveTo(lastX, lastY)
+      ctx.lineTo(p.x, p.y)
+      ctx.stroke()
+      lastX = p.x; lastY = p.y
+    }
+
+    sigPads[key] = {
+      canvas,
+      ctx,
+      clear () {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        document.getElementById(`sig-${key}-status`).textContent = ''
+      },
+      toDataURL () { return canvas.toDataURL('image/png') },
+      isEmpty () {
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+        return !data.some(v => v !== 0)
+      },
+      loadFromDataURL (url) {
+        const img = new Image()
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        img.src    = url
+      }
+    }
+  }
+
+  function markSigned (key) {
+    if (!sigPads[key].isEmpty()) {
+      document.getElementById(`sig-${key}-status`).textContent = '✓ Signed'
+    }
+  }
+
+  window.clearSig = function (key) {
+    sigPads[key].clear()
+  }
+
+  // Init all pads
+  ;['agent','tenant','witness1','witness2'].forEach(initSignaturePad)
+
+  // ── Populate form (edit mode) ─────────────────────────────────────────────
+  function populateForm (insp) {
+    const fields = ['propertyAddress','type','agentName','tenantName','tenantPhone','generalNotes']
+    fields.forEach(f => {
+      const el = document.getElementById(f)
+      if (el && insp[f]) el.value = insp[f]
+    })
+
+    if (insp.date) document.getElementById('date').value = insp.date.split('T')[0]
+
+    if (insp.witnessNames) {
+      if (insp.witnessNames[0]) document.getElementById('witness1').value = insp.witnessNames[0]
+      if (insp.witnessNames[1]) document.getElementById('witness2').value = insp.witnessNames[1]
+    }
+
+    if (insp.propertyAddress) {
+      document.getElementById('address-preview').textContent = insp.propertyAddress
+    }
+
+    // Populate checklist
+    renderChecklist(insp.checklist || {})
+    renderMeters(insp.meters || {})
+
+    // Load signatures
+    if (insp.signatures) {
+      ;['agent','tenant','witness1','witness2'].forEach(key => {
+        if (insp.signatures[key]) {
+          sigPads[key].loadFromDataURL(insp.signatures[key])
+          document.getElementById(`sig-${key}-status`).textContent = '✓ Signed'
+        }
+      })
+    }
+  }
+
+  // ── Initial render ────────────────────────────────────────────────────────
+  if (isEdit && existing) {
+    populateForm(existing)
+  } else {
+    renderChecklist()
+    renderMeters()
+  }
+
+  updatePhotoSummary()
+
+  // ── Collect form data ─────────────────────────────────────────────────────
+  function collectFormData () {
+    const now = new Date().toISOString()
+
+    // Checklist
+    const checklist = {}
+    ROOMS.forEach(room => {
+      const condEl  = document.querySelector(`input[name="cond-${room.key}"]:checked`)
+      const notesEl = document.getElementById(`notes-${room.key}`)
+      checklist[room.key] = {
+        condition: condEl ? condEl.value : '',
+        notes:     notesEl ? notesEl.value.trim() : '',
+        photoIds:  roomPhotos[room.key].map(p => p.id)
+      }
+    })
+
+    // Meters
+    const meters = {}
+    METERS.forEach(m => {
+      meters[m] = {
+        reading: document.getElementById(`meter-${m}`)?.value.trim() || '',
+        photoId: meterPhotos[m] ? meterPhotos[m].id : null
+      }
+    })
+
+    // Signatures
+    const signatures = {}
+    ;['agent','tenant','witness1','witness2'].forEach(key => {
+      signatures[key] = sigPads[key].isEmpty() ? null : sigPads[key].toDataURL()
+    })
+
+    return {
+      propertyId:      propSelect.value || null,
+      propertyAddress: document.getElementById('propertyAddress').value.trim(),
+      type:            document.getElementById('type').value,
+      date:            document.getElementById('date').value
+                         ? new Date(document.getElementById('date').value).toISOString()
+                         : now,
+      agentName:       document.getElementById('agentName').value.trim(),
+      tenantName:      document.getElementById('tenantName').value.trim(),
+      tenantPhone:     document.getElementById('tenantPhone').value.trim(),
+      witnessNames:    [
+        document.getElementById('witness1').value.trim(),
+        document.getElementById('witness2').value.trim()
+      ].filter(Boolean),
+      checklist,
+      meters,
+      generalNotes:    document.getElementById('generalNotes').value.trim(),
+      signatures,
+      updatedAt:       now
+    }
+  }
+
+  // ── Save photos to DB ─────────────────────────────────────────────────────
+  async function persistNewPhotos (inspectionId) {
+    // Room photos
+    for (const room of ROOMS) {
+      for (const photo of roomPhotos[room.key]) {
+        if (!photo.isNew) continue
+        await DB.put('photos', {
+          id:           photo.id,
+          propertyId:   null,
+          inspectionId: inspectionId,
+          data:         photo.data,
+          mimeType:     photo.mimeType,
+          description:  room.label,
+          uploadedAt:   new Date().toISOString(),
+          fileSize:     0
+        })
+        photo.isNew = false
+      }
+    }
+    // Meter photos
+    for (const meter of METERS) {
+      const mp = meterPhotos[meter]
+      if (!mp || !mp.isNew) continue
+      await DB.put('photos', {
+        id:           mp.id,
+        propertyId:   null,
+        inspectionId: inspectionId,
+        data:         mp.data,
+        mimeType:     mp.mimeType,
+        description:  `${meter} meter`,
+        uploadedAt:   new Date().toISOString(),
+        fileSize:     0
+      })
+      mp.isNew = false
+    }
+  }
+
+  // ── Validation ────────────────────────────────────────────────────────────
+  function validateForm () {
+    const errors = []
+    App.form.clearAll('inspection-form')
+
+    if (!document.getElementById('propertyAddress').value.trim()) {
+      App.form.error('propertyAddress', 'Property address is required.')
+      errors.push('Property address is required.')
+    }
+    if (!document.getElementById('type').value) {
+      App.form.error('type', 'Inspection type is required.')
+      errors.push('Inspection type is required.')
+    }
+    if (!document.getElementById('date').value) {
+      App.form.error('date', 'Inspection date is required.')
+      errors.push('Inspection date is required.')
+    }
+
+    if (errors.length) App.form.showBanner('inspection-form', errors)
+    return errors.length === 0
+  }
+
+  // ── Save (draft) ──────────────────────────────────────────────────────────
+  async function saveInspection (targetStatus) {
+    if (!validateForm()) return
+
+    const btn = targetStatus === 'completed'
+      ? document.getElementById('btn-complete')
+      : document.getElementById('btn-save')
+    btn.disabled    = true
+    btn.textContent = 'Saving…'
+
+    try {
+      const inspectionId = isEdit ? editId : App.uuid()
+      await persistNewPhotos(inspectionId)
+
+      const data        = collectFormData()
+      data.id           = inspectionId
+      data.status       = targetStatus
+      data.createdAt    = isEdit ? existing.createdAt : new Date().toISOString()
+      data.pdfBase64    = null
+
+      await Crypto.putEncrypted('inspections', data)
+      App.toast(targetStatus === 'completed' ? 'Inspection completed.' : 'Draft saved.', 'success')
+      setTimeout(() => { window.location.href = 'inspections.html' }, 800)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not save inspection.', 'danger')
+      btn.disabled    = false
+      btn.textContent = targetStatus === 'completed' ? 'Mark Complete' : 'Save as Draft'
+    }
+  }
+
+  document.getElementById('inspection-form').addEventListener('submit', e => {
+    e.preventDefault()
+    saveInspection('draft')
+  })
+
+  document.getElementById('btn-complete').addEventListener('click', () => saveInspection('completed'))
+
+  // ── Delete ────────────────────────────────────────────────────────────────
+  document.getElementById('btn-delete').addEventListener('click', async () => {
+    const addr      = document.getElementById('propertyAddress').value.trim() || 'this inspection'
+    const confirmed = await App.confirm(
+      `Delete inspection for <strong>${addr}</strong>? All photos and signatures will be lost.`,
+      'Delete', 'danger'
+    )
+    if (!confirmed) return
+    try {
+      // Delete all photos
+      for (const room of ROOMS) {
+        for (const p of roomPhotos[room.key]) {
+          try { await DB.delete('photos', p.id) } catch {}
+        }
+      }
+      for (const m of METERS) {
+        if (meterPhotos[m]) { try { await DB.delete('photos', meterPhotos[m].id) } catch {} }
+      }
+      await DB.delete('inspections', editId)
+      App.toast('Inspection deleted.', 'success')
+      setTimeout(() => { window.location.href = 'inspections.html' }, 800)
+    } catch {
+      App.toast('Could not delete inspection.', 'danger')
+    }
+  })
+
+  // ── PDF generation ────────────────────────────────────────────────────────
+  document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
+    if (!validateForm()) return
+
+    // Save first if new
+    if (!isEdit) {
+      App.toast('Save the inspection first before generating a PDF.', 'warning')
+      return
+    }
+
+    App.toast('Preparing PDF — please wait…', 'gold', 3000)
+
+    try {
+      // Update status to pdf-generated
+      const data        = collectFormData()
+      data.id           = editId
+      data.status       = 'pdf-generated'
+      data.createdAt    = existing.createdAt
+      data.pdfBase64    = null
+      await persistNewPhotos(editId)
+      await Crypto.putEncrypted('inspections', data)
+
+      // Trigger print dialog — CSS @media print hides all .no-print elements
+      setTimeout(() => window.print(), 300)
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not prepare PDF.', 'danger')
+    }
+  })
+
+  // PDF mode — auto open print dialog
+  if (pdfMode && isEdit) {
+    setTimeout(() => window.print(), 800)
+  }
+
+  // ── Utility ───────────────────────────────────────────────────────────────
+  function fileToBase64 (file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload  = () => resolve(reader.result.split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  App.form.liveValidate('propertyAddress')
+  App.form.liveValidate('type')
+  App.form.liveValidate('date')
+
+})()
+</script>
+
+</body>
+</html>
