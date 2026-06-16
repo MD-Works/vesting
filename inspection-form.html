@@ -8,34 +8,28 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Visually hidden but still a real, clickable element on screen —
-       Android Chrome silently blocks .click() on display:none file inputs. */
-    .file-input-hidden {
+    /* Use an overlayed, invisible file input inside the visible label so
+       Android Chrome receives a proper user gesture. Avoid clip/display:none
+       techniques which can silently fail on some OEM browsers. */
+    .file-input-hidden,
+    .room-add-photo input[type="file"],
+    .room-photo-grid input[type="file"] {
       position: absolute;
-      width: 1px;
-      height: 1px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
       padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0,0,0,0);
-      white-space: nowrap;
+      margin: 0;
       border: 0;
+      opacity: 0;
+      cursor: pointer;
     }
 
     .room-add-photo {
       position: relative;
-    }
-
-    .room-add-photo input[type="file"] {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      margin: 0;
-      padding: 0;
-      border: 0;
-      cursor: pointer;
     }
 
     .sig-canvas {
@@ -164,7 +158,7 @@
         <div class="form-grid">
 
           <div class="form-group form-group--full">
-            <label for="propertyAddress">Property Address <span style="color:var(--md-danger)">*</span></label>
+            <label for="propertyAddress">Property Address <span style="color:var(--md-danger)*">*</span></label>
             <input type="text" id="propertyAddress" placeholder="12 Beach Road, Umhlanga Rocks" />
             <p class="text-sm text-muted" style="margin-top:4px;">
               Or <a href="#" id="link-select-property">select from your properties ▾</a>
@@ -322,7 +316,7 @@
   const ready = await App.requireUnlock()
   if (!ready) return
 
-  // ── Constants ─────────────────────────────────────────────────────────────
+  // ── Constants ─────────────────────────────────────────────────────────��[...]
   const ROOMS = [
     { key: 'lounge',   label: 'Lounge / Living Room' },
     { key: 'kitchen',  label: 'Kitchen' },
@@ -337,7 +331,7 @@
 
   const METERS = ['electricity', 'water', 'gas']
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  // ── State ───────────────────────────────────────────────────────────[...]
   const params    = new URLSearchParams(window.location.search)
   const editId    = params.get('id')
   const pdfMode   = params.get('pdf') === '1'
@@ -352,7 +346,7 @@
   // meter photo state: { meter: { id, data, mimeType, isNew } | null }
   const meterPhotos = { electricity: null, water: null, gas: null }
 
-  // ── Edit mode ─────────────────────────────────────────────────────────────
+  // ── Edit mode ─────────────────────────────────────────────────────────��[...]
   if (isEdit) {
     document.getElementById('page-title').textContent = 'Edit Inspection'
     document.getElementById('btn-delete').style.display = 'inline-flex'
@@ -457,7 +451,7 @@
           <div class="room-photo-grid" id="room-photos-${room.key}">
             <label class="room-add-photo" title="Add photo">
               +
-              <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
+              <input type="file" id="room-photo-input-${room.key}" accept="image/*" capture="environment" multiple />
             </label>
           </div>
         </div>
@@ -481,6 +475,19 @@
         })
       }
     })
+
+    // Fallback: if label tap doesn't open the picker on some Android devices,
+    // trigger the input via a touchend handler on the label (still a user gesture).
+    document.querySelectorAll('.room-add-photo').forEach(label => {
+      label.addEventListener('touchend', (ev) => {
+        const input = label.querySelector('input[type="file"]')
+        if (input) {
+          if (ev.target !== input) {
+            try { input.click() } catch (e) { /* ignore */ }
+          }
+        }
+      }, { passive: true })
+    })
   }
 
   // ── Room photo helpers ────────────────────────────────────────────────────
@@ -489,6 +496,7 @@
   // approach for native photo/camera selection.
 
   async function handleRoomPhotoInput (e, roomKey) {
+    console.debug('handleRoomPhotoInput', { roomKey, files: e.target?.files?.length })
     const files = Array.from(e.target.files)
     for (const file of files) {
       if (!file.type.startsWith('image/')) continue
@@ -544,7 +552,7 @@
           <div class="room-photo-grid" id="meter-photo-${meter}">
             <label class="room-add-photo" title="Photograph meter">
               📷
-              <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
+              <input type="file" id="meter-photo-input-${meter}" accept="image/*" capture="environment" />
             </label>
           </div>
         </div>
@@ -567,6 +575,7 @@
   }
 
   async function handleMeterPhotoInput (e, meter) {
+    console.debug('handleMeterPhotoInput', { meter, files: e.target?.files?.length })
     const file = e.target.files[0]
     if (!file) return
     try {
@@ -595,7 +604,7 @@
     grid.insertBefore(thumb, addBtn)
   }
 
-  // ── Photo summary ─────────────────────────────────────────────────────────
+  // ── Photo summary ────────────────────────────────────────────────────────�[...]
   function updatePhotoSummary () {
     const grid = document.getElementById('all-photos-grid')
     grid.innerHTML = ''
@@ -608,7 +617,7 @@
 
       const section = document.createElement('div')
       section.style.marginBottom = 'var(--spacing-md)'
-      section.innerHTML = `<p class="text-sm" style="color:var(--md-gold-dk);margin-bottom:var(--spacing-xs);font-family:'Syne Mono',monospace;text-transform:uppercase;letter-spacing:.2em;font-size:.65rem;">${room.label}</p>`
+      section.innerHTML = `<p class="text-sm" style="color:var(--md-gold-dk);margin-bottom:var(--spacing-xs);font-family:'Syne Mono',monospace;text-transform:uppercase;letter-spacing:.2em;font-si...`
 
       const thumbGrid = document.createElement('div')
       thumbGrid.className = 'photo-gallery'
@@ -851,7 +860,7 @@
     }
   }
 
-  // ── Validation ────────────────────────────────────────────────────────────
+  // ── Validation ─────────────────────────────────────────────────────────�[...]
   function validateForm () {
     const errors = []
     App.form.clearAll('inspection-form')
@@ -873,7 +882,7 @@
     return errors.length === 0
   }
 
-  // ── Save (draft) ──────────────────────────────────────────────────────────
+  // ── Save (draft) ────────────────────────────────────────────────────────��[...]
   async function saveInspection (targetStatus) {
     if (!validateForm()) return
 
@@ -911,7 +920,7 @@
 
   document.getElementById('btn-complete').addEventListener('click', () => saveInspection('completed'))
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // ── Delete ──────────────────────────────────────────────────────────��[...]
   document.getElementById('btn-delete').addEventListener('click', async () => {
     const addr      = document.getElementById('propertyAddress').value.trim() || 'this inspection'
     const confirmed = await App.confirm(
@@ -998,20 +1007,6 @@
   if (pdfMode && isEdit) {
     setTimeout(runGeneratePDF, 600)
   }
-
-  // ── Utility ───────────────────────────────────────────────────────────────
-  function fileToBase64 (file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload  = () => resolve(reader.result.split(',')[1])
-      reader.onerror = reject
-      reader.readAsDataURL(file)
-    })
-  }
-
-  App.form.liveValidate('propertyAddress')
-  App.form.liveValidate('type')
-  App.form.liveValidate('date')
 
 })()
 </script>
