@@ -9,18 +9,23 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     /* Photo upload area */
-    /* Visually hidden but still a real, clickable element on screen —
-       Android Chrome silently blocks .click() on display:none file inputs. */
-    #photo-input {
+    /* Use an invisible file input overlay inside the upload label so Android
+       Chrome uses the native file chooser instead of relying on hidden input
+       label association that can fail on some devices. */
+    .photo-upload-btn {
+      position: relative;
+    }
+
+    .photo-upload-btn input[type="file"] {
       position: absolute;
-      width: 1px;
-      height: 1px;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      margin: 0;
       padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0,0,0,0);
-      white-space: nowrap;
       border: 0;
+      cursor: pointer;
     }
 
     .photo-gallery-wrap {
@@ -284,7 +289,6 @@
           </div>
           <p class="photo-count" id="photo-count"></p>
         </div>
-        <input type="file" id="photo-input" accept="image/*" multiple />
       </div>
 
       <!-- ── 7. Description ────────────────────────────────────────────── -->
@@ -421,6 +425,12 @@
     document.getElementById('createdAt').value = new Date().toISOString().split('T')[0]
   }
 
+  // Photo gallery shell (upload button) must exist in BOTH new and edit mode.
+  // loadPhotos() additionally fetches existing thumbnails — edit mode only.
+  if (!isEdit) {
+    renderPhotoGallery()
+  }
+
   // ── Render features grid ──────────────────────────────────────────────────
   function renderFeatures (selected = []) {
     const grid = document.getElementById('feature-grid')
@@ -507,14 +517,15 @@
   function renderPhotoGallery () {
     const gallery = document.getElementById('photo-gallery')
     gallery.innerHTML = `
-      <div class="photo-upload-btn" id="photo-upload-btn" role="button" tabindex="0" aria-label="Add photos">
+      <label class="photo-upload-btn" id="photo-upload-btn">
         <span class="photo-upload-btn__icon">📷</span>
         <span>Add Photos</span>
-      </div>
+        <input type="file" id="photo-input" accept="image/*" multiple />
+      </label>
     `
-    document.getElementById('photo-upload-btn').addEventListener('click', () => {
-      document.getElementById('photo-input').click()
-    })
+    // No JS .click() simulation needed — the file input is overlaid inside
+    // the label and can be tapped directly. This avoids Android Chrome bugs
+    // with hidden file inputs and programmatic click simulation.
     updatePhotoCount()
   }
 

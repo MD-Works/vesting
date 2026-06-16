@@ -22,6 +22,22 @@
       border: 0;
     }
 
+    .room-add-photo {
+      position: relative;
+    }
+
+    .room-add-photo input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      cursor: pointer;
+    }
+
     .sig-canvas {
       border: 1px solid var(--md-border-lt);
       border-radius: var(--md-radius);
@@ -439,9 +455,11 @@
         <div>
           <label style="margin-bottom:var(--spacing-xs);">Photos</label>
           <div class="room-photo-grid" id="room-photos-${room.key}">
-            <label class="room-add-photo" for="room-photo-input-${room.key}" title="Add photo">+</label>
+            <label class="room-add-photo" title="Add photo">
+              +
+              <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
+            </label>
           </div>
-          <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
         </div>
       `
       container.appendChild(item)
@@ -466,9 +484,9 @@
   }
 
   // ── Room photo helpers ────────────────────────────────────────────────────
-  // Note: file pickers now open via native <label for="..."> association
-  // (see renderChecklist / renderMeters), not via JS .click() simulation —
-  // this is the only fully reliable cross-Android-version approach.
+  // Note: file pickers now open via direct input overlay inside the label,
+  // not via JS .click() simulation. This is the most reliable cross-Android
+  // approach for native photo/camera selection.
 
   async function handleRoomPhotoInput (e, roomKey) {
     const files = Array.from(e.target.files)
@@ -524,9 +542,11 @@
         </div>
         <div style="margin-top:var(--spacing-sm);">
           <div class="room-photo-grid" id="meter-photo-${meter}">
-            <label class="room-add-photo" for="meter-photo-input-${meter}" title="Photograph meter">📷</label>
+            <label class="room-add-photo" title="Photograph meter">
+              📷
+              <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
+            </label>
           </div>
-          <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
         </div>
       `
       grid.appendChild(card)

@@ -146,7 +146,7 @@
         <div class="divider" style="margin:var(--spacing-lg) 0;">✦</div>
         <h4 style="margin-bottom:var(--spacing-sm);">Restore from Backup</h4>
         <p class="text-sm text-muted" style="margin-bottom:var(--spacing-md);">Merges backup data with current data. Your passphrase must match the one used when the backup was created.</p>
-        <button type="button" class="btn btn--ghost" id="btn-restore">↑ Restore from Backup</button>
+        <label class="btn btn--ghost" for="restore-input" style="cursor:pointer;">↑ Restore from Backup</label>
         <input type="file" id="restore-input" accept=".json" />
       </div>
 
@@ -325,14 +325,17 @@
   document.getElementById('btn-export-properties').addEventListener('click', () => Export.propertiesCSV())
   document.getElementById('btn-full-backup').addEventListener('click',       () => Export.fullBackup())
 
-  document.getElementById('btn-restore').addEventListener('click', async () => {
-    const ok = await App.confirm('Restore from backup? Backup data will be merged with current data.','Restore','gold')
-    if(!ok) return
-    document.getElementById('restore-input').click()
-  })
+  // File picker opens natively via <label for="restore-input"> — no JS
+  // .click() simulation. Confirm happens after the file is chosen, so the
+  // agent can see the filename/date before committing to the merge.
   document.getElementById('restore-input').addEventListener('change', async e => {
     const file = e.target.files[0]
     if(!file) return
+    const ok = await App.confirm(
+      `Restore from <strong>${file.name}</strong>? This will merge backup data with your current data.`,
+      'Restore', 'gold'
+    )
+    if (!ok) { e.target.value = ''; return }
     try { await Export.restoreBackup(file); await loadAbout() } catch {}
     e.target.value = ''
   })
