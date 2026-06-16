@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Help — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Help-specific styles ───────────────────────────────── */
+    .help-toc {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-lg);
+      background: var(--md-panel);
+      border: 1px solid var(--md-border);
+      border-radius: var(--md-radius-lg);
+    }
+    .help-toc__title {
+      font-family: 'Cinzel', serif;
+      font-size: .75rem;
+      letter-spacing: .12em;
+      color: var(--md-gold);
+      text-transform: uppercase;
+      margin-bottom: var(--spacing-sm);
+    }
+    .help-toc a {
+      color: var(--md-cream);
+      text-decoration: none;
+      font-size: .875rem;
+      padding: 3px 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      transition: color var(--transition);
+    }
+    .help-toc a:hover { color: var(--md-gold-lt); }
+    .help-toc a .toc-num {
+      color: var(--md-gold-dk);
+      font-size: .75rem;
+      font-family: 'Syne Mono', monospace;
+      min-width: 20px;
+    }
+
+    .help-section {
+      scroll-margin-top: 80px;
+      margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-lg) var(--spacing-xl);
+      background: var(--md-surface);
+      border: 1px solid var(--md-border);
+      border-radius: var(--md-radius-lg);
+    }
+    .help-section__eyebrow {
+      font-family: 'Syne Mono', monospace;
+      font-size: .7rem;
+      letter-spacing: .15em;
+      color: var(--md-gold-dk);
+      text-transform: uppercase;
+      margin-bottom: var(--spacing-xs);
+    }
+    .help-section__title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      color: var(--md-gold-lt);
+      margin-bottom: var(--spacing-md);
+      padding-bottom: var(--spacing-sm);
+      border-bottom: 1px solid var(--md-border-lt);
+    }
+
+    .help-subsection {
+      margin-top: var(--spacing-lg);
+    }
+    .help-subsection__title {
+      font-family: 'Syne', sans-serif;
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--md-gold);
+      letter-spacing: .05em;
+      margin-bottom: var(--spacing-sm);
+      text-transform: uppercase;
+    }
+
+    .help-p {
+      font-size: .875rem;
+      color: var(--md-cream);
+      line-height: 1.7;
+      margin-bottom: var(--spacing-sm);
+    }
+    .help-p:last-child { margin-bottom: 0; }
+
+    .help-tip {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: flex-start;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: rgba(201, 148, 60, .08);
+      border-left: 3px solid var(--md-gold-dk);
+      border-radius: 0 var(--md-radius) var(--md-radius) 0;
+      margin: var(--spacing-sm) 0;
+      font-size: .8rem;
+      color: var(--md-gold-pale);
+      line-height: 1.6;
+    }
+    .help-tip__icon { color: var(--md-gold); flex-shrink: 0; margin-top: 1px; }
+
+    .help-warn {
+      display: flex;
+      gap: var(--spacing-sm);
+      align-items: flex-start;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: rgba(201, 80, 80, .08);
+      border-left: 3px solid var(--md-danger);
+      border-radius: 0 var(--md-radius) var(--md-radius) 0;
+      margin: var(--spacing-sm) 0;
+      font-size: .8rem;
+      color: #f0b3b3;
+      line-height: 1.6;
+    }
+
+    .help-steps {
+      list-style: none;
+      counter-reset: steps;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      margin: var(--spacing-sm) 0;
+    }
+    .help-steps li {
+      counter-increment: steps;
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: flex-start;
+      font-size: .875rem;
+      color: var(--md-cream);
+      line-height: 1.6;
+    }
+    .help-steps li::before {
+      content: counter(steps);
+      min-width: 24px;
+      height: 24px;
+      background: var(--md-gold-dk);
+      color: var(--md-gold-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-family: 'Syne Mono', monospace;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .help-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: var(--spacing-sm) 0;
+    }
+    .help-bullets li {
+      display: flex;
+      gap: var(--spacing-sm);
+      font-size: .875rem;
+      color: var(--md-cream);
+      line-height: 1.6;
+    }
+    .help-bullets li::before {
+      content: '✦';
+      color: var(--md-gold-dk);
+      font-size: .65rem;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .help-kv {
+      display: grid;
+      grid-template-columns: minmax(130px, auto) 1fr;
+      gap: var(--spacing-xs) var(--spacing-md);
+      margin: var(--spacing-sm) 0;
+      font-size: .85rem;
+    }
+    .help-kv dt {
+      color: var(--md-gold);
+      font-weight: 500;
+      padding-top: 2px;
+    }
+    .help-kv dd {
+      color: var(--md-cream);
+      line-height: 1.6;
+    }
+
+    .help-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--md-radius-sm);
+      font-size: .7rem;
+      font-family: 'Syne Mono', monospace;
+      letter-spacing: .04em;
+      background: var(--md-panel);
+      border: 1px solid var(--md-border-lt);
+      color: var(--md-cream);
+      vertical-align: middle;
+    }
+
+    .help-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: var(--spacing-md);
+      margin: var(--spacing-md) 0;
+    }
+    .help-card {
+      padding: var(--spacing-md);
+      background: var(--md-panel);
+      border: 1px solid var(--md-border);
+      border-radius: var(--md-radius);
+    }
+    .help-card__icon {
+      font-size: 1.5rem;
+      margin-bottom: var(--spacing-xs);
+    }
+    .help-card__title {
+      font-family: 'Cinzel', serif;
+      font-size: .8rem;
+      color: var(--md-gold);
+      margin-bottom: 6px;
+    }
+    .help-card__body {
+      font-size: .8rem;
+      color: var(--md-muted);
+      line-height: 1.6;
+    }
+
+    .help-divider {
+      text-align: center;
+      color: var(--md-gold-dk);
+      font-size: .7rem;
+      letter-spacing: .3em;
+      margin: var(--spacing-xl) 0 var(--spacing-lg);
+    }
+
+    .help-back-btn {
+      position: sticky;
+      bottom: var(--spacing-md);
+      text-align: right;
+      pointer-events: none;
+    }
+    .help-back-btn a {
+      pointer-events: all;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--md-panel);
+      border: 1px solid var(--md-border-lt);
+      border-radius: 20px;
+      color: var(--md-gold);
+      text-decoration: none;
+      font-size: .75rem;
+      font-family: 'Syne', sans-serif;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+      transition: background var(--transition), color var(--transition);
+    }
+    .help-back-btn a:hover {
+      background: var(--md-gold-dk);
+      color: var(--md-gold-pale);
+    }
+
+    @media (max-width: 600px) {
+      .help-section { padding: var(--spacing-md); }
+      .help-kv { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Help</p>
+      <h1 class="page-header__title">Help &amp; User Guide</h1>
+      <p class="page-header__subtitle">Everything you need to use Vesting effectively as a South African estate agent.</p>
+      <div class="page-header__actions">
+        <a href="settings.html" class="btn btn--ghost">← Back to Settings</a>
+      </div>
+    </header>
+
+    <!-- ── Table of Contents ──────────────────────────────────── -->
+    <nav class="help-toc" aria-label="Help contents">
+      <p class="help-toc__title">Contents</p>
+      <a href="#getting-started"><span class="toc-num">01</span> Getting Started</a>
+      <a href="#security"><span class="toc-num">02</span> Security &amp; Encryption</a>
+      <a href="#dashboard"><span class="toc-num">03</span> Dashboard</a>
+      <a href="#leads"><span class="toc-num">04</span> Leads</a>
+      <a href="#contacts"><span class="toc-num">05</span> Contacts</a>
+      <a href="#properties"><span class="toc-num">06</span> Properties</a>
+      <a href="#inspections"><span class="toc-num">07</span> Inspections</a>
+      <a href="#diary"><span class="toc-num">08</span> Diary</a>
+      <a href="#export"><span class="toc-num">09</span> Export &amp; Backup</a>
+      <a href="#offline"><span class="toc-num">10</span> Offline &amp; Install</a>
+      <a href="#popia"><span class="toc-num">11</span> POPIA Compliance</a>
+      <a href="#troubleshooting"><span class="toc-num">12</span> Troubleshooting</a>
+    </nav>
+
+    <!-- ══════════════════════════════════════════════════════════
+         01 · GETTING STARTED
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="getting-started">
+      <p class="help-section__eyebrow">01</p>
+      <h2 class="help-section__title">Getting Started</h2>
+
+      <p class="help-p">Vesting is a practice management app built for South African estate agents. All your leads, contacts, properties, inspections and diary entries are stored <strong>encrypted on your device</strong> — nothing is sent to any server.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">First-time setup</p>
+        <ol class="help-steps">
+          <li>Open Vesting for the first time. You will be taken to the <strong>Settings</strong> page automatically.</li>
+          <li>Choose a passphrase of at least 8 characters. Use something memorable but not obvious — this is the only key to your data.</li>
+          <li>Confirm your passphrase and click <strong>Create Encrypted Workspace</strong>.</li>
+          <li>Go to <strong>Settings → Agent Profile</strong> and enter your name, email and phone number. This auto-fills inspection reports and WhatsApp messages.</li>
+          <li>You are ready to go. Start by adding your first lead or property.</li>
+        </ol>
+        <div class="help-warn">
+          <span>⚠</span>
+          <span>Your passphrase <strong>cannot be recovered</strong> if lost. Vesting has no "forgot password" — by design. Write it down and keep it somewhere safe.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Unlocking on subsequent visits</p>
+        <p class="help-p">Vesting locks automatically when you close the browser tab. The next time you open the app, enter your passphrase on the unlock screen. Once unlocked, you can navigate freely within the same browser session without re-entering it.</p>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>Install Vesting to your home screen (see <a href="#offline" style="color:var(--md-gold);">Section 10</a>) so it opens in its own window — faster to unlock and feels like a native app.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">App overview</p>
+        <div class="help-grid-2">
+          <div class="help-card">
+            <div class="help-card__icon">◈</div>
+            <p class="help-card__title">Leads</p>
+            <p class="help-card__body">Track buyers, renters and sellers. Set follow-up dates, log status changes and send WhatsApp messages in one tap.</p>
+          </div>
+          <div class="help-card">
+            <div class="help-card__icon">◉</div>
+            <p class="help-card__title">Contacts</p>
+            <p class="help-card__body">Your professional network — attorneys, contractors, colleagues and banks — with quick-call and WhatsApp actions.</p>
+          </div>
+          <div class="help-card">
+            <div class="help-card__icon">⬡</div>
+            <p class="help-card__title">Properties</p>
+            <p class="help-card__body">Manage sale and rental listings with photos, mandate details, owner info and current status.</p>
+          </div>
+          <div class="help-card">
+            <div class="help-card__icon">✓</div>
+            <p class="help-card__title">Inspections</p>
+            <p class="help-card__body">Room-by-room entry, exit and new-listing inspection reports with photos, meter readings and digital signatures.</p>
+          </div>
+          <div class="help-card">
+            <div class="help-card__icon">◷</div>
+            <p class="help-card__title">Diary</p>
+            <p class="help-card__body">Connect your Google Calendar for a live view. Pre-fill events from your leads and open them directly in Google Calendar.</p>
+          </div>
+          <div class="help-card">
+            <div class="help-card__icon">⚙</div>
+            <p class="help-card__title">Settings</p>
+            <p class="help-card__body">Manage your profile, change your passphrase, export CSV reports and create encrypted backups.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         02 · SECURITY & ENCRYPTION
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="security">
+      <p class="help-section__eyebrow">02</p>
+      <h2 class="help-section__title">Security &amp; Encryption</h2>
+
+      <p class="help-p">Vesting is built privacy-first. Every record is encrypted individually before being saved, using the same standard used by financial institutions.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">How it works</p>
+        <dl class="help-kv">
+          <dt>Algorithm</dt>
+          <dd>AES-256-GCM — military-grade authenticated encryption. Each record gets a unique random IV.</dd>
+          <dt>Key derivation</dt>
+          <dd>PBKDF2 with SHA-256 and 310 000 iterations. Slow by design — makes brute-force attacks impractical.</dd>
+          <dt>Key storage</dt>
+          <dd>Never written to disk. Lives in browser memory only. When you close the tab, the key is gone.</dd>
+          <dt>Passphrase storage</dt>
+          <dd>Kept in <em>sessionStorage</em> only (tab-scoped), so page navigation works without re-entering it. Cleared on tab close.</dd>
+          <dt>Salt</dt>
+          <dd>A 32-byte random salt is generated on first setup and stored in the local database. Required to derive the key — unique per device.</dd>
+          <dt>Data location</dt>
+          <dd>IndexedDB on your device only. No cloud sync. No server. No analytics.</dd>
+        </dl>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Session locking</p>
+        <p class="help-p">You can manually lock your session at any time via <strong>Settings → Encryption → Lock Session</strong>. This immediately wipes the key from memory. You'll need your passphrase to unlock again.</p>
+        <p class="help-p">The session also locks automatically when you close the browser tab or window.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Changing your passphrase</p>
+        <ol class="help-steps">
+          <li>First, create a <strong>Full Backup</strong> from Settings → Export Data. This is your safety net.</li>
+          <li>Go to <strong>Settings → Encryption → Change Passphrase</strong>.</li>
+          <li>Enter your current passphrase, then your new one (twice).</li>
+          <li>Click <strong>Change Passphrase</strong> and confirm. Vesting will re-encrypt all your records with the new key — a progress bar shows the status.</li>
+          <li>Once complete, your session is updated automatically.</li>
+        </ol>
+        <div class="help-warn">
+          <span>⚠</span>
+          <span>If you restore a backup from before the passphrase change, the backup's data was encrypted with the <em>old</em> passphrase. You would need to restore it when your old passphrase is active, or re-encrypt manually. Always back up before changing.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         03 · DASHBOARD
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="dashboard">
+      <p class="help-section__eyebrow">03</p>
+      <h2 class="help-section__title">Dashboard</h2>
+
+      <p class="help-p">The Dashboard is your daily overview. It loads as soon as you unlock Vesting and shows everything that needs your attention today.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">What you'll see</p>
+        <ul class="help-bullets">
+          <li><strong>Greeting</strong> — personalised with your name and time of day.</li>
+          <li><strong>Stat cards</strong> — total counts for leads, contacts and properties at a glance.</li>
+          <li><strong>Follow-ups due</strong> — all leads whose follow-up date is today or overdue, sorted by urgency. Overdue items appear in red.</li>
+          <li><strong>Recent leads</strong> — your five most recently added leads with status badges.</li>
+          <li><strong>Quick actions</strong> — buttons to add a new lead, property or open the diary.</li>
+        </ul>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Follow-up indicators</p>
+        <dl class="help-kv">
+          <dt><span class="help-badge" style="color:#c94c4c;border-color:#c94c4c;">Overdue</span></dt>
+          <dd>Follow-up date has passed. Contact this lead as soon as possible.</dd>
+          <dt><span class="help-badge" style="color:#d4a017;border-color:#d4a017;">Today</span></dt>
+          <dd>Follow-up is due today.</dd>
+          <dt><span class="help-badge">Upcoming</span></dt>
+          <dd>Scheduled for a future date — no urgent action needed.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         04 · LEADS
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="leads">
+      <p class="help-section__eyebrow">04</p>
+      <h2 class="help-section__title">Leads</h2>
+
+      <p class="help-p">Leads are buyers, renters or sellers in your pipeline. Every prospect you interact with should have a lead record so nothing falls through the cracks.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Adding a lead</p>
+        <ol class="help-steps">
+          <li>Tap <strong>+ New Lead</strong> from the Leads page or the Dashboard.</li>
+          <li>Enter the lead's full name (required), phone, email and preferred contact method.</li>
+          <li>Set the <strong>Property Type</strong> (sale, rental or both), area preferences and budget.</li>
+          <li>Choose a <strong>Source</strong> — where did this lead come from? (walk-in, Property24, referral, etc.)</li>
+          <li>Set a <strong>Follow-up Date</strong> so it appears on the Dashboard and Diary.</li>
+          <li>Add any notes, then click <strong>Save Lead</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Lead statuses</p>
+        <dl class="help-kv">
+          <dt>New Lead</dt><dd>Just added. Not yet qualified.</dd>
+          <dt>Qualified</dt><dd>You've spoken to them and confirmed they are a genuine prospect.</dd>
+          <dt>Viewing Scheduled</dt><dd>A property viewing has been booked.</dd>
+          <dt>Offer Pending</dt><dd>An offer to purchase or lease has been made.</dd>
+          <dt>Closed</dt><dd>Deal concluded successfully.</dd>
+          <dt>Lost</dt><dd>The lead has gone cold or chosen another agent.</dd>
+        </dl>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">WhatsApp integration</p>
+        <p class="help-p">Each lead with a phone number has a <strong>WA</strong> button. Tapping it opens WhatsApp with a pre-filled message that includes your name (from your agent profile), the lead's name, and a professional greeting. Edit it before sending if needed.</p>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>Set your agent name in <strong>Settings → Agent Profile</strong> so the WhatsApp message always includes your name automatically.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Filtering &amp; searching</p>
+        <p class="help-p">Use the filter bar at the top of the Leads page to narrow results by status, property type or source. The search box matches against name, phone and email simultaneously. Filters combine — for example, show only <em>Qualified</em> leads from <em>Property24</em>.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Additional lead fields</p>
+        <ul class="help-bullets">
+          <li><strong>Bedrooms / Bathrooms</strong> — minimum requirements for the property they're looking for.</li>
+          <li><strong>Employment / Credit Score</strong> — useful for rental qualification.</li>
+          <li><strong>Family Size</strong> — helps match properties with appropriate space.</li>
+          <li><strong>Date of Birth / Anniversary</strong> — relationship touchpoints for follow-up calls.</li>
+          <li><strong>Other Requirements</strong> — pet-friendly, garden, ground floor, etc.</li>
+          <li><strong>Last Contact</strong> — stamp the date of your most recent interaction.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         05 · CONTACTS
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="contacts">
+      <p class="help-section__eyebrow">05</p>
+      <h2 class="help-section__title">Contacts</h2>
+
+      <p class="help-p">Contacts are the professionals you work with — not your clients. Think attorneys, bond originators, contractors, developers and colleagues.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Adding a contact</p>
+        <ol class="help-steps">
+          <li>Tap <strong>+ New Contact</strong> from the Contacts page.</li>
+          <li>Enter the person's full name (required), phone, email and company/practice name.</li>
+          <li>Choose a <strong>Category</strong> — Attorney, Contractor, Colleague, Developer, Bank, or Other.</li>
+          <li>Add a <strong>Relationship Description</strong> — a one-line reminder of who they are and how you work together.</li>
+          <li>Set <strong>Last Contacted</strong> so you can see at a glance who you haven't spoken to in a while.</li>
+          <li>Add any freeform notes, then save.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Quick actions</p>
+        <p class="help-p">When editing an existing contact, quick-action buttons appear below the form:</p>
+        <ul class="help-bullets">
+          <li><strong>📞 Call</strong> — opens your phone dialler with the number pre-filled.</li>
+          <li><strong>WhatsApp</strong> — opens WhatsApp with a direct message to this contact.</li>
+        </ul>
+        <p class="help-p">On the Contacts list page, <strong>Call</strong> and <strong>WA</strong> buttons appear inline for each contact with a phone number.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Categories</p>
+        <dl class="help-kv">
+          <dt>Attorney</dt><dd>Bond and transfer attorneys for registration and transfer matters.</dd>
+          <dt>Contractor</dt><dd>Plumbers, electricians, builders — referrals for your clients.</dd>
+          <dt>Colleague</dt><dd>Fellow agents and support staff in your agency or network.</dd>
+          <dt>Developer</dt><dd>Property developers with new developments in your area.</dd>
+          <dt>Bank</dt><dd>Bank branch managers, home loan consultants and bond originators.</dd>
+          <dt>Other</dt><dd>Anyone who doesn't fit the above — valuers, surveyors, etc.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         06 · PROPERTIES
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="properties">
+      <p class="help-section__eyebrow">06</p>
+      <h2 class="help-section__title">Properties</h2>
+
+      <p class="help-p">Properties are the listings you manage — for sale, for rent, or both. Each property card holds all the details you need on-site, including photos that are stored locally on your device.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Adding a property</p>
+        <ol class="help-steps">
+          <li>Tap <strong>+ New Property</strong> from the Properties page.</li>
+          <li>Enter the street address, suburb, city and province.</li>
+          <li>Set the <strong>Listing Type</strong> (for sale, for rent, or both) and current <strong>Status</strong>.</li>
+          <li>Enter the <strong>Mandate Type</strong> (sole or open) and mandate expiry date.</li>
+          <li>Fill in the price, levies, rates and deposit where applicable.</li>
+          <li>Add property specs: bedrooms, bathrooms, garages, floor size and erf size.</li>
+          <li>Enter the <strong>Owner details</strong> — name, phone and email.</li>
+          <li>Add showing instructions, assigned agent, a public description and internal notes.</li>
+          <li>Upload photos using the photo uploader — these are stored encrypted on your device.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Property statuses</p>
+        <dl class="help-kv">
+          <dt>Active</dt><dd>Currently listed and available.</dd>
+          <dt>Pending</dt><dd>Under offer or application — not yet concluded.</dd>
+          <dt>Sold</dt><dd>Transfer completed.</dd>
+          <dt>Rented</dt><dd>Lease signed and tenant placed.</dd>
+          <dt>Off-market</dt><dd>Withdrawn, expired mandate, or temporarily not listed.</dd>
+        </dl>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Photos</p>
+        <p class="help-p">Photos uploaded to a property are compressed and stored in the encrypted local database. The first photo appears as the card thumbnail on the Properties grid. All photos are removed when you delete a property.</p>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>Photos are stored on your device only. They are included in the Full Backup (JSON), but <em>not</em> in CSV exports. Back up regularly if photos are important to you.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Starting an inspection from a property</p>
+        <p class="help-p">On the Properties list, each card has an <strong>Inspect</strong> button that opens a new inspection form pre-filled with that property's address. This is the fastest way to start an entry or exit inspection.</p>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         07 · INSPECTIONS
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="inspections">
+      <p class="help-section__eyebrow">07</p>
+      <h2 class="help-section__title">Inspections</h2>
+
+      <p class="help-p">Inspection reports document the condition of a property at a specific point in time. Vesting generates a professional PDF you can email to landlords, tenants and your agency.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Inspection types</p>
+        <dl class="help-kv">
+          <dt>Entry Inspection</dt><dd>Conducted when a tenant moves in. Documents the condition of the property before occupation.</dd>
+          <dt>Exit Inspection</dt><dd>Conducted when a tenant vacates. Compared against the entry inspection to determine any damage or liability.</dd>
+          <dt>New Listing</dt><dd>A general condition report when you take on a new mandate. Useful for seller expectations and buyer disclosure.</dd>
+        </dl>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Completing an inspection</p>
+        <ol class="help-steps">
+          <li>Open the inspection form and fill in the property address (or select from your properties), inspection type, date and agent name.</li>
+          <li>Add the <strong>tenant/occupant name</strong>, their phone number, and the names of any witnesses.</li>
+          <li>Work through the <strong>Room-by-Room Checklist</strong> — rate each room as Good, Fair or Poor, add notes about any damage or repairs needed, and upload photos directly from your camera or gallery.</li>
+          <li>Record <strong>Meter Readings</strong> — electricity, water and gas — and photograph the meter faces.</li>
+          <li>Add any <strong>General Notes</strong> such as keys handed over, remote controls, or special conditions.</li>
+          <li>Collect <strong>digital signatures</strong> — agent, tenant and up to two witnesses can sign on-screen using a stylus or finger.</li>
+          <li>Click <strong>Save as Draft</strong> to continue later, or <strong>Complete Inspection</strong> when everything is done.</li>
+          <li>Generate the PDF and email or share it directly.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Rooms covered</p>
+        <ul class="help-bullets">
+          <li>Lounge / Living Room</li>
+          <li>Kitchen</li>
+          <li>Main Bedroom</li>
+          <li>Bedroom 2 &amp; 3</li>
+          <li>Bathroom / En-suite</li>
+          <li>Garage / Parking</li>
+          <li>Garden / Outdoor</li>
+          <li>Exterior / Building</li>
+        </ul>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Generating a PDF</p>
+        <p class="help-p">Once an inspection is marked <strong>Completed</strong>, a <strong>PDF</strong> button appears on the Inspections list. Tapping it opens the inspection form in PDF-generation mode. The PDF includes all room notes, condition ratings, meter readings, the photo summary and all signatures.</p>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>On mobile, use your browser's Share button after generating the PDF to send it directly via email, WhatsApp or save to Files.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Inspection statuses</p>
+        <dl class="help-kv">
+          <dt>Draft</dt><dd>In progress — you can still edit all fields.</dd>
+          <dt>Completed</dt><dd>Signed off. PDF can be generated.</dd>
+          <dt>PDF Generated</dt><dd>A PDF has been created for this inspection.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         08 · DIARY
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="diary">
+      <p class="help-section__eyebrow">08</p>
+      <h2 class="help-section__title">Diary</h2>
+
+      <p class="help-p">The Diary page brings your schedule and follow-ups together. It embeds your Google Calendar on the left and shows today's lead follow-ups on the right.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Connecting Google Calendar</p>
+        <ol class="help-steps">
+          <li>On the Diary page, enter your Gmail address in the <strong>Connect your Google Calendar</strong> box.</li>
+          <li>Click <strong>Connect</strong>. Your calendar appears in read-only view, set to Johannesburg time.</li>
+          <li>Switch between Month, Week, Day and Agenda views using the buttons above the calendar.</li>
+          <li>Click <strong>↻ Refresh</strong> after saving new events in Google Calendar to see them here.</li>
+          <li>To disconnect, click the <strong>Disconnect</strong> link next to your email address.</li>
+        </ol>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>The calendar is embedded as a read-only iframe. To create, edit or delete events, use Google Calendar directly — then refresh Vesting's Diary view.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Adding events to Google Calendar</p>
+        <p class="help-p">The <strong>Add to Google Calendar</strong> panel on the right pre-fills a new event for you:</p>
+        <ol class="help-steps">
+          <li>Select an <strong>Event Type</strong> (Viewing, Follow-up, Inspection, Meeting, Other).</li>
+          <li>Optionally select a <strong>Lead</strong> from the dropdown — this auto-fills the event title, notes, and follow-up date from the lead's record.</li>
+          <li>Edit the title, date, start/end times and location as needed.</li>
+          <li>Click <strong>Open in Google Calendar ↗</strong> — a new Google Calendar tab opens with everything pre-filled.</li>
+          <li>Click <strong>Save</strong> in Google Calendar to confirm the event, then refresh the Diary.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Follow-ups Today sidebar</p>
+        <p class="help-p">The <strong>Follow-ups Today</strong> panel lists all leads with a follow-up date of today or earlier. Overdue items are highlighted. Each item has a <strong>WA</strong> button to open WhatsApp instantly for that lead.</p>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         09 · EXPORT & BACKUP
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="export">
+      <p class="help-section__eyebrow">09</p>
+      <h2 class="help-section__title">Export &amp; Backup</h2>
+
+      <p class="help-p">Vesting data lives on your device. Export and backup regularly to protect against device loss, browser data clearing, or accidental deletion.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">CSV exports</p>
+        <p class="help-p">CSV files open in Excel, Numbers or Google Sheets. Available exports:</p>
+        <ul class="help-bullets">
+          <li><strong>Leads (CSV)</strong> — all lead records including status, follow-up dates, area preferences, budget and notes.</li>
+          <li><strong>Contacts (CSV)</strong> — all contact records including category, company and relationship notes.</li>
+          <li><strong>Properties (CSV)</strong> — all property records including mandate details, specs, owner info and pricing.</li>
+        </ul>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>CSVs are exported as <em>plain text</em> — they are not encrypted. Be mindful of where you save or share them, especially if they contain client personal information (POPIA applies).</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Full Backup (JSON)</p>
+        <p class="help-p">The full backup exports <em>all</em> your data — including photos and inspection records — as an encrypted JSON file. The data is already encrypted in the database; the backup preserves that encryption.</p>
+        <div class="help-warn">
+          <span>⚠</span>
+          <span>Restoring a backup requires the <strong>same passphrase</strong> that was active when the backup was created. If you changed your passphrase after the backup, use the old passphrase to restore. Store your backups with a note of which passphrase was used.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Restoring from backup</p>
+        <ol class="help-steps">
+          <li>Go to <strong>Settings → Export Data → Restore from Backup</strong>.</li>
+          <li>Confirm the merge warning — existing records are kept; backup records are merged in.</li>
+          <li>Select your <code>.json</code> backup file.</li>
+          <li>Reload the app to see the restored data.</li>
+        </ol>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>Restore is a <em>merge</em> operation — it adds records from the backup without deleting what's already in the app. If you want a clean restore, use <strong>Settings → Reset</strong> first (if available), then restore.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Backup schedule recommendation</p>
+        <ul class="help-bullets">
+          <li>Take a <strong>full backup once a week</strong> at minimum.</li>
+          <li>Always back up <strong>before changing your passphrase</strong>.</li>
+          <li>Back up <strong>before clearing browser data</strong> or switching devices.</li>
+          <li>Store backups in a secure location — Google Drive, iCloud or an encrypted USB.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         10 · OFFLINE & INSTALL
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="offline">
+      <p class="help-section__eyebrow">10</p>
+      <h2 class="help-section__title">Offline &amp; Install</h2>
+
+      <p class="help-p">Vesting is a <strong>Progressive Web App (PWA)</strong>. It works fully offline and can be installed on any device like a native app — no app store required.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Installing on Android (Chrome)</p>
+        <ol class="help-steps">
+          <li>Open Vesting in Chrome.</li>
+          <li>Tap the three-dot menu (⋮) in the top-right corner.</li>
+          <li>Tap <strong>Add to Home screen</strong>.</li>
+          <li>Confirm by tapping <strong>Add</strong>. Vesting now appears on your home screen.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Installing on iPhone / iPad (Safari)</p>
+        <ol class="help-steps">
+          <li>Open Vesting in Safari.</li>
+          <li>Tap the <strong>Share</strong> button (rectangle with an arrow pointing up).</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+          <li>Tap <strong>Add</strong> in the top-right corner.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Installing on desktop (Chrome / Edge)</p>
+        <ol class="help-steps">
+          <li>Open Vesting in Chrome or Edge.</li>
+          <li>Look for the install icon (⊕) in the address bar, or go to the browser menu → <strong>Install Vesting</strong>.</li>
+          <li>Click <strong>Install</strong>. Vesting opens in its own window.</li>
+        </ol>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">How offline works</p>
+        <p class="help-p">The first time you open Vesting with an internet connection, the app shell (all HTML, CSS and JavaScript files) is cached on your device by the service worker. After that, Vesting loads instantly from cache — even with no signal.</p>
+        <p class="help-p">All data is stored in IndexedDB on the device. You can add leads, take photos in inspections, and complete reports with no connectivity. When you return online, no sync is needed because there is no server to sync to.</p>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>The Google Calendar embed and the "Open in Google Calendar" feature do require an internet connection — these are external services. Everything else in Vesting works offline.</span>
+        </div>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Shortcuts</p>
+        <p class="help-p">When installed as a PWA, Vesting supports home-screen shortcuts. Long-press the Vesting icon (Android) or 3D Touch / Haptic Touch (iOS) to get quick shortcuts to:</p>
+        <ul class="help-bullets">
+          <li>New Lead</li>
+          <li>New Property</li>
+          <li>Diary</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         11 · POPIA COMPLIANCE
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="popia">
+      <p class="help-section__eyebrow">11</p>
+      <h2 class="help-section__title">POPIA Compliance</h2>
+
+      <p class="help-p">The Protection of Personal Information Act (POPIA) requires estate agents to handle client data responsibly. Vesting is designed with POPIA principles built in.</p>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">How Vesting supports POPIA</p>
+        <ul class="help-bullets">
+          <li><strong>Data minimisation</strong> — Vesting only collects the fields relevant to your practice. No tracking, advertising or telemetry.</li>
+          <li><strong>Purpose limitation</strong> — data entered is for your professional use only. It is never shared with third parties.</li>
+          <li><strong>Security</strong> — AES-256-GCM encryption with PBKDF2 key derivation ensures data is protected at rest.</li>
+          <li><strong>Storage limitation</strong> — data stays on your device. You control what is exported and where it goes.</li>
+          <li><strong>Data subject access</strong> — you can export any individual's record as CSV at any time.</li>
+          <li><strong>Right to erasure</strong> — delete any lead, contact, property or inspection at any time.</li>
+        </ul>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Your responsibilities</p>
+        <ul class="help-bullets">
+          <li>Only collect personal information you need for the transaction or relationship.</li>
+          <li>Inform clients that you record their details in a secure app on your device.</li>
+          <li>When exporting CSVs, ensure the file is stored securely and not shared unnecessarily.</li>
+          <li>Delete records of clients you no longer work with once no longer needed.</li>
+          <li>Keep your device secured with a PIN, fingerprint or face lock.</li>
+        </ul>
+        <div class="help-tip">
+          <span class="help-tip__icon">✦</span>
+          <span>Vesting is a tool to <em>help</em> you comply with POPIA. It does not constitute legal advice. For sector-specific guidance, consult the Estate Agency Affairs Board (EAAB) or a qualified POPIA practitioner.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         12 · TROUBLESHOOTING
+    ═══════════════════════════════════════════════════════════════ -->
+    <section class="help-section" id="troubleshooting">
+      <p class="help-section__eyebrow">12</p>
+      <h2 class="help-section__title">Troubleshooting</h2>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">I forgot my passphrase</p>
+        <p class="help-p">There is no way to recover your passphrase. This is a deliberate security design — if Vesting could recover it, so could an attacker. Your options are:</p>
+        <ul class="help-bullets">
+          <li>If you have a <strong>recent backup</strong>, clear the app's browser storage (browser Settings → Site Data → Vesting), set up fresh, then restore your backup using the correct passphrase from the time of backup.</li>
+          <li>If you have no backup and cannot remember the passphrase, the data is not recoverable. Start fresh and use a password manager or written note to store your new passphrase safely.</li>
+        </ul>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">The app asks me to unlock every time I navigate</p>
+        <p class="help-p">This usually means your browser's <em>sessionStorage</em> is being cleared between pages, which can happen in private/incognito mode. Use Vesting in a regular browser tab, or install it as a PWA (it gets its own persistent storage context).</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Photos are not showing on Property cards</p>
+        <p class="help-p">Photos load asynchronously after the cards render. Give it a second or two — they should appear. If they don't, the photo may have failed to save. Try re-uploading the photo from the property's Edit screen.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">The Google Calendar isn't showing</p>
+        <p class="help-p">The calendar embed requires an internet connection and a valid Gmail address. If it shows a blank frame:</p>
+        <ul class="help-bullets">
+          <li>Confirm you are online.</li>
+          <li>Check that the Gmail address is the same one logged into your Google Calendar.</li>
+          <li>Your calendar privacy settings in Google must allow embedding. In Google Calendar → Settings → your calendar → Access permissions, enable <strong>Make available to public</strong> or at minimum ensure it's not set to private-only.</li>
+          <li>Try disconnecting and reconnecting your calendar in the Diary page.</li>
+        </ul>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">The PDF is blank or missing photos</p>
+        <p class="help-p">PDF generation reads photos from your local database. Make sure you are using a supported browser (Chrome or Edge are recommended). Safari on iOS may have limitations with certain PDF export features. If photos are missing, ensure they were saved to the inspection before generating the PDF.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">The app won't install on my device</p>
+        <p class="help-p">PWA installation requires HTTPS. If you are accessing Vesting via a local server or HTTP, the install prompt won't appear. Ensure the app is hosted on a domain with a valid SSL certificate.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">I see "Database not initialised" errors</p>
+        <p class="help-p">This can occur if IndexedDB is blocked by your browser settings (some strict privacy configurations disable it). Check your browser's site settings and ensure that cookies and site data are allowed for Vesting's domain.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Phone numbers show as invalid</p>
+        <p class="help-p">Vesting validates South African phone numbers. Acceptable formats include:</p>
+        <ul class="help-bullets">
+          <li><code>082 765 4321</code></li>
+          <li><code>+27 82 765 4321</code></li>
+          <li><code>0827654321</code></li>
+        </ul>
+        <p class="help-p">International numbers outside South Africa may not pass validation. Use the notes field to record international contact numbers if needed.</p>
+      </div>
+
+      <div class="help-subsection">
+        <p class="help-subsection__title">Restore from backup did nothing</p>
+        <p class="help-p">Confirm the file is a valid Vesting backup — it should have a <code>_meta</code> and <code>data</code> key at the root of the JSON. Files exported from other apps or older unsupported versions may be rejected. After a restore, reload the page to see the updated data.</p>
+      </div>
+
+      <div class="help-divider">✦ ✦ ✦</div>
+
+      <div style="text-align:center; padding: var(--spacing-md) 0;">
+        <p style="font-family:'Cinzel',serif;color:var(--md-gold-lt);letter-spacing:.05em;font-size:1rem;margin-bottom:6px;">Vesting</p>
+        <p class="tagline">Your practice. Your clients. Secured.</p>
+        <p class="text-sm text-muted" style="margin-top:var(--spacing-md);">
+          <span style="color:var(--md-gold-dk);">✦</span> Built by MD Works · Durban, South Africa <span style="color:var(--md-gold-dk);">✦</span>
+        </p>
+        <p class="text-sm text-muted" style="margin-top:var(--spacing-xs);">v1.0.0</p>
+      </div>
+    </section>
+
+    <!-- Sticky back-to-top -->
+    <div class="help-back-btn">
+      <a href="#top">↑ Back to top</a>
+    </div>
+
+    <footer id="vesting-footer"></footer>
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+  await App.init()
+  // Help page is readable without unlocking — no requireUnlock guard
+})()
+</script>
+
+</body>
+</html>

@@ -24,7 +24,7 @@
     <header class="page-header">
       <p class="page-header__eyebrow">Vesting · Settings</p>
       <h1 class="page-header__title">Settings</h1>
-      <p class="page-header__subtitle">Profile, encryption, export and backup.</p>
+      <p class="page-header__subtitle">Profile, encryption, export, backup and help.</p>
     </header>
 
     <!-- Setup screen -->
@@ -138,9 +138,26 @@
         <input type="file" id="restore-input" accept=".json" />
       </div>
 
+      <!-- 5. Help -->
+      <div class="form-section">
+        <h3 class="form-section__title">5. Help &amp; User Guide</h3>
+        <p class="text-sm text-muted" style="margin-bottom:var(--spacing-md);">Learn how to use every feature of Vesting — security, leads, inspections, the diary and more.</p>
+        <a href="help.html" class="btn btn--gold" style="display:inline-flex;align-items:center;gap:var(--spacing-sm);">
+          <span>?</span> Open Help Guide
+        </a>
+        <div style="margin-top:var(--spacing-md);display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:var(--spacing-xs);">
+          <a href="help.html#getting-started" class="btn btn--ghost btn--sm">Getting Started</a>
+          <a href="help.html#security"         class="btn btn--ghost btn--sm">Security</a>
+          <a href="help.html#leads"            class="btn btn--ghost btn--sm">Leads</a>
+          <a href="help.html#inspections"      class="btn btn--ghost btn--sm">Inspections</a>
+          <a href="help.html#export"           class="btn btn--ghost btn--sm">Backup &amp; Export</a>
+          <a href="help.html#troubleshooting"  class="btn btn--ghost btn--sm">Troubleshooting</a>
+        </div>
+      </div>
+
       <!-- 4. About -->
       <div class="form-section">
-        <h3 class="form-section__title">4. About</h3>
+        <h3 class="form-section__title">6. About</h3>
         <div>
           <div class="about-stat"><span class="about-stat__label">App</span><span class="about-stat__value">Vesting by MD Works</span></div>
           <div class="about-stat"><span class="about-stat__label">Version</span><span class="about-stat__value">1.0.0</span></div>
