@@ -11,7 +11,7 @@
     .sig-canvas {
       border: 1px solid var(--md-border-lt);
       border-radius: var(--md-radius);
-      background: var(--md-panel);
+      background: #ffffff;
       cursor: crosshair;
       display: block;
       width: 100%;
@@ -615,10 +615,19 @@
       }
     }
 
-    ctx.strokeStyle = '#e8c87a'
+    ctx.strokeStyle = '#000000'
     ctx.lineWidth   = 2
     ctx.lineCap     = 'round'
     ctx.lineJoin    = 'round'
+
+    // Fill with white so the exported PNG has a real white background
+    // (black ink on white — correct for printed/scanned signatures).
+    function fillWhite () {
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = '#000000' // restore for any fill use elsewhere (unused, but safe)
+    }
+    fillWhite()
 
     canvas.addEventListener('mousedown',  e => { drawing = true;  const p = getPos(e); lastX = p.x; lastY = p.y })
     canvas.addEventListener('mousemove',  e => { if (!drawing) return; draw(e) })
@@ -641,18 +650,26 @@
       canvas,
       ctx,
       clear () {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        fillWhite()
         document.getElementById(`sig-${key}-status`).textContent = ''
       },
       toDataURL () { return canvas.toDataURL('image/png') },
       isEmpty () {
+        // Compare against a blank white canvas — any non-white pixel means signed.
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
-        return !data.some(v => v !== 0)
+        for (let i = 0; i < data.length; i += 4) {
+          // If any pixel isn't white (255,255,255) with full alpha, it's signed.
+          if (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255) return false
+        }
+        return true
       },
       loadFromDataURL (url) {
         const img = new Image()
-        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        img.src    = url
+        img.onload = () => {
+          fillWhite()
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        }
+        img.src = url
       }
     }
   }
@@ -891,38 +908,65 @@
   })
 
   // ── PDF generation ────────────────────────────────────────────────────────
-  document.getElementById('btn-generate-pdf').addEventListener('click', async () => {
+  // Collects all room + meter photos into a flat list jsPDF can embed,
+  // then calls App.generateInspectionPDF() which builds a real, openable
+  // PDF file (not a browser print-to-PDF, which was producing broken files).
+  function collectPhotosForPDF () {
+    const flat = []
+    ROOMS.forEach(room => {
+      roomPhotos[room.key].forEach(p => {
+        flat.push({ room: room.label, data: p.data, mimeType: p.mimeType })
+      })
+    })
+    METERS.forEach(meter => {
+      const mp = meterPhotos[meter]
+      if (mp) flat.push({ room: `${meter.charAt(0).toUpperCase()}${meter.slice(1)} Meter`, data: mp.data, mimeType: mp.mimeType })
+    })
+    return flat
+  }
+
+  async function runGeneratePDF () {
     if (!validateForm()) return
 
-    // Save first if new
     if (!isEdit) {
       App.toast('Save the inspection first before generating a PDF.', 'warning')
       return
     }
 
+    const btn = document.getElementById('btn-generate-pdf')
+    btn.disabled    = true
+    btn.textContent = 'Preparing PDF…'
     App.toast('Preparing PDF — please wait…', 'gold', 3000)
 
     try {
-      // Update status to pdf-generated
-      const data        = collectFormData()
-      data.id           = editId
-      data.status       = 'pdf-generated'
-      data.createdAt    = existing.createdAt
-      data.pdfBase64    = null
+      // Save current state first (status → pdf-generated)
+      const data     = collectFormData()
+      data.id        = editId
+      data.status    = 'pdf-generated'
+      data.createdAt = existing.createdAt
+      data.pdfBase64 = null
       await persistNewPhotos(editId)
       await Crypto.putEncrypted('inspections', data)
 
-      // Trigger print dialog — CSS @media print hides all .no-print elements
-      setTimeout(() => window.print(), 300)
+      // Build the real PDF file and trigger a proper download
+      const photos = collectPhotosForPDF()
+      await App.generateInspectionPDF(data, photos)
+
+      App.toast('PDF downloaded.', 'success')
     } catch (err) {
       console.error(err)
-      App.toast('Could not prepare PDF.', 'danger')
+      App.toast('Could not generate PDF. Please try again.', 'danger')
+    } finally {
+      btn.disabled    = false
+      btn.textContent = 'Generate PDF'
     }
-  })
+  }
 
-  // PDF mode — auto open print dialog
+  document.getElementById('btn-generate-pdf').addEventListener('click', runGeneratePDF)
+
+  // Arriving via inspections.html "PDF" button (?pdf=1) — auto-generate on load
   if (pdfMode && isEdit) {
-    setTimeout(() => window.print(), 800)
+    setTimeout(runGeneratePDF, 600)
   }
 
   // ── Utility ───────────────────────────────────────────────────────────────
