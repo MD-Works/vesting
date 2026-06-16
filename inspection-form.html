@@ -439,7 +439,7 @@
         <div>
           <label style="margin-bottom:var(--spacing-xs);">Photos</label>
           <div class="room-photo-grid" id="room-photos-${room.key}">
-            <div class="room-add-photo" onclick="triggerRoomPhoto('${room.key}')" title="Add photo">+</div>
+            <label class="room-add-photo" for="room-photo-input-${room.key}" title="Add photo">+</label>
           </div>
           <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
         </div>
@@ -466,9 +466,9 @@
   }
 
   // ── Room photo helpers ────────────────────────────────────────────────────
-  window.triggerRoomPhoto = function (roomKey) {
-    document.getElementById(`room-photo-input-${roomKey}`).click()
-  }
+  // Note: file pickers now open via native <label for="..."> association
+  // (see renderChecklist / renderMeters), not via JS .click() simulation —
+  // this is the only fully reliable cross-Android-version approach.
 
   async function handleRoomPhotoInput (e, roomKey) {
     const files = Array.from(e.target.files)
@@ -524,7 +524,7 @@
         </div>
         <div style="margin-top:var(--spacing-sm);">
           <div class="room-photo-grid" id="meter-photo-${meter}">
-            <div class="room-add-photo" onclick="triggerMeterPhoto('${meter}')" title="Photograph meter">📷</div>
+            <label class="room-add-photo" for="meter-photo-input-${meter}" title="Photograph meter">📷</label>
           </div>
           <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
         </div>
@@ -544,10 +544,6 @@
         }).catch(() => {})
       }
     })
-  }
-
-  window.triggerMeterPhoto = function (meter) {
-    document.getElementById(`meter-photo-input-${meter}`).click()
   }
 
   async function handleMeterPhotoInput (e, meter) {
