@@ -9,7 +9,19 @@
   <link rel="stylesheet" href="css/style.css" />
   <style>
     /* Photo upload area */
-    #photo-input { display: none; }
+    /* Visually hidden but still a real, clickable element on screen —
+       Android Chrome silently blocks .click() on display:none file inputs. */
+    #photo-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
 
     .photo-gallery-wrap {
       display: flex;

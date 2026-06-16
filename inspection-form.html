@@ -8,6 +8,20 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
+    /* Visually hidden but still a real, clickable element on screen —
+       Android Chrome silently blocks .click() on display:none file inputs. */
+    .file-input-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .sig-canvas {
       border: 1px solid var(--md-border-lt);
       border-radius: var(--md-radius);
@@ -427,7 +441,7 @@
           <div class="room-photo-grid" id="room-photos-${room.key}">
             <div class="room-add-photo" onclick="triggerRoomPhoto('${room.key}')" title="Add photo">+</div>
           </div>
-          <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple style="display:none;" />
+          <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
         </div>
       `
       container.appendChild(item)
@@ -512,7 +526,7 @@
           <div class="room-photo-grid" id="meter-photo-${meter}">
             <div class="room-add-photo" onclick="triggerMeterPhoto('${meter}')" title="Photograph meter">📷</div>
           </div>
-          <input type="file" id="meter-photo-input-${meter}" accept="image/*" style="display:none;" />
+          <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
         </div>
       `
       grid.appendChild(card)
