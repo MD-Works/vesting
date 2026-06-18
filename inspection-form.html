@@ -10,23 +10,15 @@
   <style>
     /* Visually hidden but still a real, clickable element on screen —
        Android Chrome silently blocks .click() on display:none file inputs. */
+    /* Full-size, visually invisible (not zero-size/clipped) — some Android
+       Chrome builds drop zero-dimension elements from the tap-target /
+       accessibility tree in regular browser tabs (though not in installed
+       standalone PWAs, which is why this only broke in tab mode). Keeping
+       the input at real size, nested inside and exactly overlapping its
+       label, guarantees Chrome always has a genuine tappable target. */
+    .room-add-photo { position: relative; }
+
     .file-input-hidden {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0,0,0,0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    .room-add-photo {
-      position: relative;
-    }
-
-    .room-add-photo input[type="file"] {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -455,7 +447,7 @@
         <div>
           <label style="margin-bottom:var(--spacing-xs);">Photos</label>
           <div class="room-photo-grid" id="room-photos-${room.key}">
-            <label class="room-add-photo" title="Add photo">
+            <label class="room-add-photo" for="room-photo-input-${room.key}" title="Add photo">
               +
               <input type="file" id="room-photo-input-${room.key}" accept="image/*" multiple class="file-input-hidden" />
             </label>
@@ -542,7 +534,7 @@
         </div>
         <div style="margin-top:var(--spacing-sm);">
           <div class="room-photo-grid" id="meter-photo-${meter}">
-            <label class="room-add-photo" title="Photograph meter">
+            <label class="room-add-photo" for="meter-photo-input-${meter}" title="Photograph meter">
               📷
               <input type="file" id="meter-photo-input-${meter}" accept="image/*" class="file-input-hidden" />
             </label>

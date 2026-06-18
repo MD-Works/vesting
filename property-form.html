@@ -8,15 +8,22 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Photo upload area */
-    /* Use an invisible file input overlay inside the upload label so Android
-       Chrome uses the native file chooser instead of relying on hidden input
-       label association that can fail on some devices. */
-    .photo-upload-btn {
-      position: relative;
-    }
+    /* Visually hidden but still a real, on-screen, clickable element —
+       the only technique that reliably opens Android Chrome's native
+       photo chooser across versions. Avoid display:none (silently
+       blocked by some Android Chrome builds) and avoid an opacity:0
+       absolute-overlay input (unreliable hit-testing inside flex/
+       aspect-ratio containers on some Android layout engines). */
+    /* Full-size, visually invisible (not zero-size/clipped) — some Android
+       Chrome builds drop zero-dimension elements from the tap-target /
+       accessibility tree in regular browser tabs (though not in installed
+       standalone PWAs, which is why this only broke in tab mode). Keeping
+       the input at real size, exactly overlapping its label, guarantees
+       Chrome always has a genuine tappable target — the label's for=
+       association is kept too as a second, redundant path. */
+    .photo-upload-btn { position: relative; }
 
-    .photo-upload-btn input[type="file"] {
+    #photo-input {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -517,15 +524,18 @@
   function renderPhotoGallery () {
     const gallery = document.getElementById('photo-gallery')
     gallery.innerHTML = `
-      <label class="photo-upload-btn" id="photo-upload-btn">
+      <label class="photo-upload-btn" id="photo-upload-btn" for="photo-input">
         <span class="photo-upload-btn__icon">📷</span>
         <span>Add Photos</span>
         <input type="file" id="photo-input" accept="image/*" multiple />
       </label>
     `
-    // No JS .click() simulation needed — the file input is overlaid inside
-    // the label and can be tapped directly. This avoids Android Chrome bugs
-    // with hidden file inputs and programmatic click simulation.
+    // The input is a real, full-size element exactly overlapping the label
+    // (not zero-size/clipped) — this guarantees Android Chrome always has
+    // a genuine tappable target in regular tab mode, not just an installed
+    // standalone PWA. The label's for= association is kept as a second,
+    // redundant path in case browsers honour it directly.
+    // and no opacity-overlay positioning trickery involved.
     updatePhotoCount()
   }
 
