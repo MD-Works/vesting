@@ -772,23 +772,26 @@
     updateBuyer120Summary()
   }
 
-  function populateBuyer120 (saved = {}) {
-    Object.entries(saved).forEach(([key, s]) => {
-      if (buyerItems[key]) {
-        buyerItems[key].status = s.status || ''
-        buyerItems[key].notes  = s.notes || ''
-        buyerItems[key].cost   = s.cost || 0
-        buyerItems[key].photos = (s.photoIds || []).map(id => ({ id, isNew: false }))
+  async function populateBuyer120 (saved = {}) {
+    for (const [key, s] of Object.entries(saved)) {
+      if (!buyerItems[key]) continue
+      buyerItems[key].status = s.status || ''
+      buyerItems[key].notes  = s.notes || ''
+      buyerItems[key].cost   = s.cost || 0
+      buyerItems[key].photos = []
+      // Sequential + awaited, matching property-form.html's loadPhotos()
+      // pattern — thumbnails must not be rendered until real photo data
+      // has come back from IndexedDB, or the <img> src ends up pointing
+      // at "data:undefined;base64,undefined".
+      for (const pid of (s.photoIds || [])) {
+        try {
+          const photo = await DB.get('photos', pid)
+          if (photo) {
+            buyerItems[key].photos.push({ id: pid, data: photo.data, mimeType: photo.mimeType, isNew: false })
+          }
+        } catch { /* skip missing photo */ }
       }
-    })
-    // Resolve photo data for populated photos
-    Object.values(buyerItems).forEach(s => {
-      s.photos.forEach(async p => {
-        if (p.data) return
-        const photo = await DB.get('photos', p.id)
-        if (photo) { p.data = photo.data; p.mimeType = photo.mimeType }
-      })
-    })
+    }
   }
 
   // ── Toggle sections based on inspection type ──────────────────────────────
@@ -1037,7 +1040,7 @@
   ;['agent','tenant','witness1','witness2'].forEach(initSignaturePad)
 
   // ── Populate form (edit mode) ─────────────────────────────────────────────
-  function populateForm (insp) {
+  async function populateForm (insp) {
     const fields = ['propertyAddress','type','agentName','tenantName','tenantPhone','generalNotes']
     fields.forEach(f => {
       const el = document.getElementById(f)
@@ -1058,7 +1061,7 @@
     // Populate checklist
     renderChecklist(insp.checklist || {})
     renderMeters(insp.meters || {})
-    if (insp.type === 'buyer-120') populateBuyer120(insp.buyerChecklist || {})
+    if (insp.type === 'buyer-120') await populateBuyer120(insp.buyerChecklist || {})
 
     // Load signatures
     if (insp.signatures) {
@@ -1073,7 +1076,7 @@
 
   // ── Initial render ────────────────────────────────────────────────────────
   if (isEdit && existing) {
-    populateForm(existing)
+    await populateForm(existing)
   } else {
     renderChecklist()
     renderMeters()
