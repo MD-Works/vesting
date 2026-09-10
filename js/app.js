@@ -467,7 +467,7 @@ const App = (() => {
     y = 50
 
     // ── Inspection details ───────────────────────────────────────────────
-    const typeLabel = { entry: 'Entry Inspection', exit: 'Exit Inspection', 'new-listing': 'New Listing Inspection' }
+    const typeLabel = { entry: 'Entry Inspection', exit: 'Exit Inspection', 'new-listing': 'New Listing Inspection', 'buyer-120': '120-Point Buyer Inspection' }
     const details   = [
       ['Property',        inspection.propertyAddress || '—'],
       ['Inspection Type', typeLabel[inspection.type] || inspection.type || '—'],
@@ -500,7 +500,8 @@ const App = (() => {
     })
     y += 6
 
-    // ── Room checklist ───────────────────────────────────────────────────
+    // ── Room checklist (entry / exit / new-listing) ───────────────────────
+    if (inspection.type !== 'buyer-120') {
     checkPage(15)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(11)
@@ -558,9 +559,106 @@ const App = (() => {
         y += 5
       })
     }
+    }
 
-    // ── Meter readings ───────────────────────────────────────────────────
-    if (inspection.meters) {
+    // ── 120-point buyer inspection ─────────────────────────────────────────
+    if (inspection.type === 'buyer-120' && inspection.buyerChecklist) {
+      checkPage(15)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(...GOLD)
+      doc.text('120-POINT INSPECTION', ml, y)
+      doc.line(ml, y + 1, pw - mr, y + 1)
+      y += 8
+
+      const STATUS_COLOUR = { pass: [76,175,122], fail: [201,76,76], monitor: [212,160,23], na: [150,150,150] }
+
+      // Summary box
+      const entries = Object.entries(inspection.buyerChecklist)
+      const counts  = { pass: 0, fail: 0, monitor: 0, na: 0 }
+      entries.forEach(([, s]) => { if (s.status) counts[s.status] = (counts[s.status] || 0) + 1 })
+
+      doc.setFillColor(245, 240, 230)
+      doc.rect(ml, y, tw, 16, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...BLACK)
+      doc.text(`Pass: ${counts.pass}   Fail: ${counts.fail}   Monitor: ${counts.monitor}   N/A: ${counts.na}`, ml + 3, y + 7)
+      doc.setTextColor(...GOLD)
+      doc.text(`Estimated repair cost: R${(inspection.totalEstimatedRepairCost || 0).toLocaleString('en-ZA')}`, ml + 3, y + 13)
+      y += 21
+
+      // Group by zone (preserve zone order as it appears in the keys)
+      const byZone = {}
+      entries.forEach(([key, s]) => {
+        const [zone, item] = key.split('::')
+        if (!byZone[zone]) byZone[zone] = []
+        byZone[zone].push({ item, ...s })
+      })
+
+      Object.entries(byZone).forEach(([zoneName, items]) => {
+        // Only print zones with at least one non-empty status to keep the report focused
+        const relevant = items.filter(i => i.status)
+        if (!relevant.length) return
+
+        checkPage(12)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.setTextColor(...BLACK)
+        doc.text(zoneName.toUpperCase(), ml, y)
+        y += 5.5
+
+        relevant.forEach(i => {
+          checkPage(10)
+          const col = STATUS_COLOUR[i.status] || GREY
+          doc.setFillColor(...col)
+          doc.roundedRect(ml, y - 3.2, 16, 4.6, 0.8, 0.8, 'F')
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(6)
+          doc.setTextColor(255, 255, 255)
+          doc.text(i.status.toUpperCase(), ml + 8, y, { align: 'center' })
+
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8)
+          doc.setTextColor(...BLACK)
+          const itemLines = doc.splitTextToSize(i.item, tw - 20)
+          doc.text(itemLines[0], ml + 20, y)
+          y += 4.5
+          if (itemLines.length > 1) {
+            for (let li = 1; li < itemLines.length; li++) {
+              checkPage(4.5)
+              doc.text(itemLines[li], ml + 20, y)
+              y += 4.5
+            }
+          }
+
+          if (i.notes) {
+            checkPage(4.5)
+            doc.setFont('helvetica', 'italic')
+            doc.setFontSize(7.5)
+            doc.setTextColor(...GREY)
+            const noteLines = doc.splitTextToSize(i.notes, tw - 20)
+            noteLines.forEach(line => {
+              checkPage(4)
+              doc.text(line, ml + 20, y)
+              y += 4
+            })
+          }
+
+          if (i.cost) {
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(7.5)
+            doc.setTextColor(...GOLD)
+            doc.text(`Est. R${i.cost.toLocaleString('en-ZA')}`, pw - mr, y - 4.5, { align: 'right' })
+          }
+          y += 1.5
+        })
+        y += 3
+      })
+    }
+
+    // ── Meter readings (entry / exit / new-listing) ────────────────────────
+    if (inspection.type !== 'buyer-120' && inspection.meters) {
       checkPage(20)
       y += 4
       doc.setFont('helvetica', 'bold')

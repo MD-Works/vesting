@@ -118,6 +118,81 @@
       color: var(--md-gold);
     }
 
+    /* ── 120-point buyer inspection ── */
+    .buyer120-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+      font-size: .85rem;
+      color: var(--md-muted);
+    }
+    .buyer120-summary__stat strong { color: var(--md-ink); font-size: 1rem; }
+    .buyer120-summary__stat--fail strong { color: var(--md-danger); }
+    .buyer120-summary__stat--monitor strong { color: #d4a017; }
+    .buyer120-summary__stat--cost strong { color: var(--md-gold-dk); }
+
+    .zone-tabs-wrap {
+      display: flex;
+      gap: var(--spacing-xs);
+      overflow-x: auto;
+      padding-bottom: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+      -webkit-overflow-scrolling: touch;
+    }
+    .zone-tabs-wrap::-webkit-scrollbar { display: none; }
+
+    .zone-tab {
+      flex: 0 0 auto;
+      padding: var(--spacing-xs) var(--spacing-sm);
+      border-radius: var(--md-radius-sm);
+      border: 1px solid var(--md-border-lt);
+      background: transparent;
+      color: var(--md-muted);
+      font-size: .8rem;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .zone-tab--active { background: var(--md-gold); border-color: var(--md-gold); color: #1a1a1a; font-weight: 600; }
+    .zone-tab__badge { font-size: .7rem; opacity: .8; margin-left: 4px; }
+
+    .b120-item {
+      border: 1px solid var(--md-border-lt);
+      border-radius: var(--md-radius);
+      padding: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+    }
+    .b120-item__name { font-size: .85rem; font-weight: 500; margin-bottom: var(--spacing-xs); }
+    .b120-status-row {
+      display: flex;
+      gap: var(--spacing-xs);
+      flex-wrap: wrap;
+      margin-bottom: var(--spacing-xs);
+    }
+    .b120-status-btn {
+      flex: 1;
+      min-width: 64px;
+      padding: 6px 4px;
+      border-radius: var(--md-radius-sm);
+      border: 1px solid var(--md-border-lt);
+      background: transparent;
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      cursor: pointer;
+      color: var(--md-muted);
+    }
+    .b120-status-btn--pass.is-active    { background: var(--md-success); border-color: var(--md-success); color: #fff; }
+    .b120-status-btn--fail.is-active    { background: var(--md-danger); border-color: var(--md-danger); color: #fff; }
+    .b120-status-btn--monitor.is-active { background: #d4a017; border-color: #d4a017; color: #fff; }
+    .b120-status-btn--na.is-active      { background: var(--md-muted); border-color: var(--md-muted); color: #fff; }
+
+    .b120-item__details { display: none; gap: var(--spacing-xs); }
+    .b120-item__details.is-open { display: grid; grid-template-columns: 1fr 120px; gap: var(--spacing-xs); margin-top: var(--spacing-xs); }
+    .b120-item__details textarea { grid-column: 1 / -1; }
+
     /* PDF print styles */
     @media print {
       .no-print { display: none !important; }
@@ -173,6 +248,7 @@
               <option value="entry">Entry Inspection</option>
               <option value="exit">Exit Inspection</option>
               <option value="new-listing">New Listing</option>
+              <option value="buyer-120">120-Point Buyer Inspection</option>
             </select>
           </div>
 
@@ -209,18 +285,35 @@
         </div>
       </div>
 
-      <!-- ── 2. Room-by-Room Checklist ─────────────────────────────────── -->
-      <div class="form-section">
+      <!-- ── 2. Room-by-Room Checklist (entry / exit / new-listing) ──────── -->
+      <div class="form-section" id="room-checklist-section">
         <h3 class="form-section__title">2. Room-by-Room Checklist</h3>
         <div id="checklist-container">
           <!-- Rendered by JS -->
         </div>
       </div>
 
-      <!-- ── 3. Meter Readings ──────────────────────────────────────────── -->
-      <div class="form-section">
+      <!-- ── 3. Meter Readings (entry / exit / new-listing) ──────────────── -->
+      <div class="form-section" id="meter-section">
         <h3 class="form-section__title">3. Meter Readings</h3>
         <div class="meter-grid" id="meter-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── 2b. 120-Point Buyer Inspection Checklist ─────────────────────── -->
+      <div class="form-section" id="buyer120-section" style="display:none;">
+        <h3 class="form-section__title">2. 120-Point Buyer Inspection</h3>
+        <div class="buyer120-summary" id="buyer120-summary">
+          <span class="buyer120-summary__stat"><strong id="b120-pass">0</strong> Pass</span>
+          <span class="buyer120-summary__stat buyer120-summary__stat--fail"><strong id="b120-fail">0</strong> Fail</span>
+          <span class="buyer120-summary__stat buyer120-summary__stat--monitor"><strong id="b120-monitor">0</strong> Monitor</span>
+          <span class="buyer120-summary__stat buyer120-summary__stat--cost">Est. repairs: R<strong id="b120-total-cost">0</strong></span>
+        </div>
+        <div class="zone-tabs-wrap" id="zone-tabs">
+          <!-- Rendered by JS -->
+        </div>
+        <div id="zone-items-container">
           <!-- Rendered by JS -->
         </div>
       </div>
@@ -329,6 +422,77 @@
 
   const METERS = ['electricity', 'water', 'gas']
 
+  // 120-point buyer inspection zones. Ported from the Elysium Works
+  // inspection app — extend with the remaining zones (Plumbing, Electrical,
+  // Ceilings & Floors, Interior Walls, HVAC/Geysers, Garden & Boundary)
+  // as those item lists are finalised.
+  const ZONES = [
+    { name: 'Roof & Attic', icon: '🏠', items: [
+      'Roof covering condition (tiles/sheeting)', 'Ridge cap and mortar joints',
+      'Roof battens and purlins visible', 'Attic ventilation and airflow',
+      'Roof structure — rafters and trusses', 'Signs of water ingress or staining',
+      'Insulation presence and condition', 'Access hatch condition',
+      'Skylights or vents sealed correctly', 'Verge and fascia boards',
+      'Sarking / underlay where applicable', 'Overall roof pitch and alignment',
+      'Evidence of pest or bird nesting', 'TV antenna / solar mounting fixings',
+      'Chimney flashing and condition' ] },
+    { name: 'Gutters & Drainage', icon: '🌧️', items: [
+      'Gutter alignment and fall direction', 'Gutter joints — sealed and watertight',
+      'Downpipe connections and fixings', 'Downpipe discharge points',
+      'Gutter debris and blockage', 'Fascia boards behind gutters',
+      'Stormwater drain inlets clear', 'Pooling water around foundation',
+      'Ground slope away from structure', 'Splash aprons at downpipes' ] },
+    { name: 'Exterior Walls', icon: '🧱', items: [
+      'Plaster condition — cracks or spalling', 'Paint condition and moisture bubbling',
+      'Wall tie failure indicators', 'Horizontal cracking in mortar courses',
+      'Diagonal cracking at openings', 'Efflorescence (salt staining)',
+      'Damp penetration marks', 'Vents and airbricks present and clear',
+      'Wall-to-roof junction sealed', 'Expansion joints present where needed',
+      'DPC (damp proof course) visible/intact', 'Surface coating integrity',
+      'Structural bulging or bowing', 'Cladding or capping details',
+      'General weatherproofing condition' ] },
+    { name: 'Windows & Doors', icon: '🚪', items: [
+      'Frame condition — timber/aluminium', 'Glazing sealed and intact',
+      'Putty or sealant around glass', 'Opening and closing operation smooth',
+      'Locks and handles functional', 'Security bars fitted and fixed',
+      'Sill weatherproofing and slope', 'Lintels above openings intact',
+      'Flashing above frames', 'Gap between frame and wall sealed',
+      'Door threshold and weather strip', 'Hinges and closers functional',
+      'Window stays and restrictors', 'Safety glazing where required',
+      'Fly screens present and intact' ] },
+    { name: 'Foundation & Structure', icon: '🏗️', items: [
+      'Visible foundation crack patterns', 'Step cracking in brickwork',
+      'Differential settlement signs', 'Sub-floor ventilation (if timber floor)',
+      'Rising damp indicators at base', 'Retaining walls — condition and drainage',
+      'Basement or undercroft condition', 'Visible structural beams and columns',
+      'Evidence of previous underpinning', 'Soil condition around perimeter' ] },
+    { name: 'Garage', icon: '🚗', items: [
+      'Garage door operation and balance', 'Door motor and remote function',
+      'Door seals — floor and sides', 'Garage floor slab — cracks or heaving',
+      'Internal access door to house', 'Garage ventilation',
+      'Electrical outlets and lighting', 'Roof of garage structure',
+      'Water or oil staining on floor', 'Storage area and shelving condition' ] },
+    { name: 'Kitchen', icon: '🍳', items: [
+      'Cabinet door and drawer operation', 'Cabinet box condition — moisture damage',
+      'Countertop joints and sealing', 'Sink seals and basin drain',
+      'Mixer tap operation and leaks', 'Splash back — grouting and sealing',
+      'Extractor fan operation', 'Plumbing below sink — no active leaks',
+      'Geyser / HWC proximity plumbing', 'Electrical outlet positions (away from water)',
+      'Appliance connections — safe and sealed', 'Floor condition at base of cabinets',
+      'Overhead cabinet fixings to wall', 'Pantry or larder condition',
+      'Light fitting above work surfaces' ] },
+    { name: 'Bathrooms', icon: '🚿', items: [
+      'Bath / shower tray condition', 'Shower screen or curtain rail',
+      'All tiling — grouted and sealed', 'Silicone at bath / shower edges',
+      'Basin — condition and fixings', 'Toilet pan — stable, no movement',
+      'Toilet flush mechanism', 'Cistern — no running or leaking',
+      'Bathroom extractor / ventilation', 'Water pressure at fixtures',
+      'Hot water reaching bathroom', 'Waste pipes — draining freely',
+      'Floor drain present and clear', 'Moisture on walls or ceiling',
+      'Mirror cabinet and fittings fixed' ] }
+  ]
+  const TOTAL_B120_ITEMS = ZONES.reduce((s, z) => s + z.items.length, 0)
+
   // ── State ─────────────────────────────────────────────────────────────────
   const params    = new URLSearchParams(window.location.search)
   const editId    = params.get('id')
@@ -343,6 +507,14 @@
 
   // meter photo state: { meter: { id, data, mimeType, isNew } | null }
   const meterPhotos = { electricity: null, water: null, gas: null }
+
+  // 120-point buyer inspection state, keyed by "zoneName::itemName":
+  // { status: 'pass'|'fail'|'monitor'|'na'|'', notes: '', cost: 0, photos: [{id,data,mimeType,isNew}] }
+  const buyerItems = {}
+  ZONES.forEach(z => z.items.forEach(item => {
+    buyerItems[`${z.name}::${item}`] = { status: '', notes: '', cost: 0, photos: [] }
+  }))
+  let activeZoneIdx = 0
 
   // ── Edit mode ─────────────────────────────────────────────────────────────
   if (isEdit) {
@@ -474,6 +646,161 @@
       }
     })
   }
+
+  // ── 120-point buyer inspection: render & interaction ─────────────────────
+  function renderZoneTabs () {
+    const wrap = document.getElementById('zone-tabs')
+    wrap.innerHTML = ZONES.map((z, i) => {
+      const doneCount = z.items.filter(item => buyerItems[`${z.name}::${item}`].status).length
+      return `<button type="button" class="zone-tab ${i === activeZoneIdx ? 'zone-tab--active' : ''}" data-zone="${i}">
+        ${z.icon} ${z.name} <span class="zone-tab__badge">${doneCount}/${z.items.length}</span>
+      </button>`
+    }).join('')
+    wrap.querySelectorAll('.zone-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeZoneIdx = parseInt(btn.dataset.zone, 10)
+        renderZoneTabs()
+        renderZoneItems()
+      })
+    })
+  }
+
+  function renderZoneItems () {
+    const zone      = ZONES[activeZoneIdx]
+    const container = document.getElementById('zone-items-container')
+    container.innerHTML = ''
+
+    zone.items.forEach(itemName => {
+      const key   = `${zone.name}::${itemName}`
+      const state = buyerItems[key]
+
+      const card = document.createElement('div')
+      card.className = 'b120-item'
+      card.innerHTML = `
+        <div class="b120-item__name">${itemName}</div>
+        <div class="b120-status-row">
+          ${['pass','fail','monitor','na'].map(s => `
+            <button type="button" class="b120-status-btn b120-status-btn--${s} ${state.status === s ? 'is-active' : ''}" data-status="${s}">${s}</button>
+          `).join('')}
+        </div>
+        <div class="b120-item__details ${state.status && state.status !== 'pass' ? 'is-open' : ''}">
+          <textarea rows="2" class="b120-notes" placeholder="Notes on the issue found…">${state.notes || ''}</textarea>
+          <input type="number" class="b120-cost" min="0" step="50" placeholder="Est. R" value="${state.cost || ''}" />
+        </div>
+        <div style="margin-top:var(--spacing-xs);">
+          <div class="room-photo-grid b120-photo-grid">
+            <label class="room-add-photo" title="Add photo">
+              📷
+              <input type="file" accept="image/*" multiple class="file-input-hidden b120-photo-input" />
+            </label>
+          </div>
+        </div>
+      `
+
+      // Status buttons
+      card.querySelectorAll('.b120-status-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.status = state.status === btn.dataset.status ? '' : btn.dataset.status
+          renderZoneItems()
+          renderZoneTabs()
+          updateBuyer120Summary()
+        })
+      })
+
+      // Notes / cost
+      card.querySelector('.b120-notes').addEventListener('input', e => { state.notes = e.target.value })
+      card.querySelector('.b120-cost').addEventListener('input', e => {
+        state.cost = parseFloat(e.target.value) || 0
+        updateBuyer120Summary()
+      })
+
+      // Photos
+      const photoGrid = card.querySelector('.b120-photo-grid')
+      state.photos.forEach(p => addB120Thumb(photoGrid, key, p.id, `data:${p.mimeType};base64,${p.data}`))
+
+      card.querySelector('.b120-photo-input').addEventListener('change', async e => {
+        const files = Array.from(e.target.files)
+        for (const file of files) {
+          if (!file.type.startsWith('image/')) continue
+          try {
+            const base64 = await fileToBase64(file)
+            const id     = App.uuid()
+            state.photos.push({ id, data: base64, mimeType: file.type, isNew: true })
+            addB120Thumb(photoGrid, key, id, `data:${file.type};base64,${base64}`)
+          } catch { App.toast('Could not read photo.', 'danger') }
+        }
+        e.target.value = ''
+      })
+
+      container.appendChild(card)
+    })
+  }
+
+  function addB120Thumb (grid, key, id, src) {
+    const addBtn = grid.querySelector('.room-add-photo')
+    const thumb  = document.createElement('div')
+    thumb.className  = 'room-photo-thumb'
+    thumb.dataset.id = id
+    thumb.innerHTML  = `
+      <img src="${src}" alt="Inspection photo" />
+      <button type="button" class="room-photo-thumb__remove" data-remove="${id}">&times;</button>
+    `
+    thumb.querySelector('[data-remove]').addEventListener('click', () => {
+      buyerItems[key].photos = buyerItems[key].photos.filter(p => p.id !== id)
+      thumb.remove()
+    })
+    grid.insertBefore(thumb, addBtn)
+  }
+
+  function updateBuyer120Summary () {
+    let pass = 0, fail = 0, monitor = 0, cost = 0
+    Object.values(buyerItems).forEach(s => {
+      if (s.status === 'pass') pass++
+      else if (s.status === 'fail') fail++
+      else if (s.status === 'monitor') monitor++
+      cost += s.cost || 0
+    })
+    document.getElementById('b120-pass').textContent = pass
+    document.getElementById('b120-fail').textContent = fail
+    document.getElementById('b120-monitor').textContent = monitor
+    document.getElementById('b120-total-cost').textContent = cost.toLocaleString('en-ZA')
+  }
+
+  function renderBuyer120 () {
+    renderZoneTabs()
+    renderZoneItems()
+    updateBuyer120Summary()
+  }
+
+  function populateBuyer120 (saved = {}) {
+    Object.entries(saved).forEach(([key, s]) => {
+      if (buyerItems[key]) {
+        buyerItems[key].status = s.status || ''
+        buyerItems[key].notes  = s.notes || ''
+        buyerItems[key].cost   = s.cost || 0
+        buyerItems[key].photos = (s.photoIds || []).map(id => ({ id, isNew: false }))
+      }
+    })
+    // Resolve photo data for populated photos
+    Object.values(buyerItems).forEach(s => {
+      s.photos.forEach(async p => {
+        if (p.data) return
+        const photo = await DB.get('photos', p.id)
+        if (photo) { p.data = photo.data; p.mimeType = photo.mimeType }
+      })
+    })
+  }
+
+  // ── Toggle sections based on inspection type ──────────────────────────────
+  function toggleSectionsForType () {
+    const isB120 = document.getElementById('type').value === 'buyer-120'
+    document.getElementById('room-checklist-section').style.display = isB120 ? 'none' : ''
+    document.getElementById('meter-section').style.display = isB120 ? 'none' : ''
+    document.getElementById('buyer120-section').style.display = isB120 ? '' : 'none'
+    if (isB120) renderBuyer120()
+  }
+
+  document.getElementById('type').addEventListener('change', toggleSectionsForType)
 
   // ── Room photo helpers ────────────────────────────────────────────────────
   // Note: file pickers now open via direct input overlay inside the label,
@@ -731,6 +1058,7 @@
     // Populate checklist
     renderChecklist(insp.checklist || {})
     renderMeters(insp.meters || {})
+    if (insp.type === 'buyer-120') populateBuyer120(insp.buyerChecklist || {})
 
     // Load signatures
     if (insp.signatures) {
@@ -750,6 +1078,7 @@
     renderChecklist()
     renderMeters()
   }
+  toggleSectionsForType()
 
   updatePhotoSummary()
 
@@ -784,6 +1113,22 @@
       signatures[key] = sigPads[key].isEmpty() ? null : sigPads[key].toDataURL()
     })
 
+    // 120-point buyer inspection
+    let buyerChecklist = null
+    let totalEstimatedRepairCost = 0
+    if (document.getElementById('type').value === 'buyer-120') {
+      buyerChecklist = {}
+      Object.entries(buyerItems).forEach(([key, s]) => {
+        buyerChecklist[key] = {
+          status:   s.status,
+          notes:    s.notes,
+          cost:     s.cost || 0,
+          photoIds: s.photos.map(p => p.id)
+        }
+        totalEstimatedRepairCost += s.cost || 0
+      })
+    }
+
     return {
       propertyId:      propSelect.value || null,
       propertyAddress: document.getElementById('propertyAddress').value.trim(),
@@ -800,6 +1145,8 @@
       ].filter(Boolean),
       checklist,
       meters,
+      buyerChecklist,
+      totalEstimatedRepairCost,
       generalNotes:    document.getElementById('generalNotes').value.trim(),
       signatures,
       updatedAt:       now
@@ -840,6 +1187,23 @@
         fileSize:     0
       })
       mp.isNew = false
+    }
+    // 120-point buyer inspection item photos
+    for (const [key, state] of Object.entries(buyerItems)) {
+      for (const photo of state.photos) {
+        if (!photo.isNew) continue
+        await DB.put('photos', {
+          id:           photo.id,
+          propertyId:   null,
+          inspectionId: inspectionId,
+          data:         photo.data,
+          mimeType:     photo.mimeType,
+          description:  key,
+          uploadedAt:   new Date().toISOString(),
+          fileSize:     0
+        })
+        photo.isNew = false
+      }
     }
   }
 
@@ -921,6 +1285,11 @@
       for (const m of METERS) {
         if (meterPhotos[m]) { try { await DB.delete('photos', meterPhotos[m].id) } catch {} }
       }
+      for (const state of Object.values(buyerItems)) {
+        for (const p of state.photos) {
+          try { await DB.delete('photos', p.id) } catch {}
+        }
+      }
       await DB.delete('inspections', editId)
       App.toast('Inspection deleted.', 'success')
       setTimeout(() => { window.location.href = 'inspections.html' }, 800)
@@ -943,6 +1312,11 @@
     METERS.forEach(meter => {
       const mp = meterPhotos[meter]
       if (mp) flat.push({ room: `${meter.charAt(0).toUpperCase()}${meter.slice(1)} Meter`, data: mp.data, mimeType: mp.mimeType })
+    })
+    Object.entries(buyerItems).forEach(([key, s]) => {
+      s.photos.forEach(p => {
+        if (p.data) flat.push({ room: key.split('::')[1], data: p.data, mimeType: p.mimeType })
+      })
     })
     return flat
   }
