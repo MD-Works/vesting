@@ -82,6 +82,27 @@
       line-height: 1.5;
     }
 
+    .calc-staleness-warning {
+      display: none;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: rgba(201,76,76,.1);
+      border: 1px solid rgba(201,76,76,.35);
+      border-radius: var(--md-radius);
+      color: var(--md-danger);
+      font-size: .82rem;
+      margin-bottom: var(--spacing-md);
+    }
+    .calc-staleness-warning--visible { display: flex; }
+
+    .calc-rates-meta {
+      font-size: .72rem;
+      color: var(--md-muted);
+      margin-top: var(--spacing-sm);
+    }
+    .calc-rates-meta a { color: var(--md-gold-dk); }
+
     .calc-share-btn { margin-top: var(--spacing-md); }
   </style>
 </head>
@@ -106,6 +127,16 @@
 
     <!-- ══════════════════ Transfer Duty ══════════════════ -->
     <section class="calc-panel calc-panel--active" id="panel-transfer-duty">
+      <div class="calc-staleness-warning" id="td-staleness-warning">
+        <span>⚠️</span>
+        <span>
+          These transfer duty rates haven't been checked against SARS in over a year —
+          they may be out of date. Verify at
+          <a href="https://www.sars.gov.za/tax-rates/transfer-duty/" target="_blank" rel="noopener">sars.gov.za</a>
+          and update <code>js/tax-rates.js</code> if they've changed.
+        </span>
+      </div>
+
       <div class="form-section">
         <h3 class="form-section__title">Property Purchase Price</h3>
         <div class="form-grid">
@@ -133,6 +164,7 @@
           Share via WhatsApp
         </button>
       </div>
+      <p class="calc-rates-meta" id="td-rates-meta"></p>
     </section>
 
     <!-- ══════════════════ Bond Repayment ══════════════════ -->
@@ -146,7 +178,7 @@
           </div>
           <div class="form-group">
             <label for="bd-rate">Interest Rate (% per year)</label>
-            <input type="number" id="bd-rate" min="0" max="30" step="0.05" value="10.50" inputmode="decimal" />
+            <input type="number" id="bd-rate" min="0" max="30" step="0.05" inputmode="decimal" />
           </div>
           <div class="form-group">
             <label for="bd-term">Loan Term (years)</label>
@@ -162,10 +194,11 @@
           </div>
         </div>
         <p class="calc-note">
-          Default rate reflects the SA prime lending rate as a starting point (10.50% as of mid-2026) — edit it
-          to match the client's actual quoted rate, since prime changes with each SARB MPC meeting and a bank's
-          rate to an individual is usually prime plus or minus a margin based on their risk profile.
+          Edit the rate to match the client's actual quoted rate — a bank's rate to an individual is
+          usually the prime lending rate plus or minus a margin based on their risk profile, and prime
+          itself changes after SARB Monetary Policy Committee meetings.
         </p>
+        <p class="calc-rates-meta" id="bd-rates-meta"></p>
       </div>
 
       <div class="calc-result" id="bd-result" style="display:none;">
@@ -193,10 +226,36 @@
 <script src="js/db.js"></script>
 <script src="js/crypto.js"></script>
 <script src="js/app.js"></script>
+<script src="js/tax-rates.js"></script>
 <script>
 ;(async () => {
 
   await App.init()
+
+  // ── Rates metadata: staleness check + visible "last verified" note ───────
+  // If nobody has confirmed these rates against SARS/SARB in over a year,
+  // warn rather than silently calculating with numbers that may be stale.
+  function daysSince (isoDate) {
+    return (Date.now() - new Date(isoDate).getTime()) / (1000 * 60 * 60 * 24)
+  }
+
+  function renderRatesMeta () {
+    const td = TaxRates.transferDuty
+    document.getElementById('td-rates-meta').innerHTML =
+      `Rates last verified ${td.lastVerified} · <a href="${td.sourceUrl}" target="_blank" rel="noopener">SARS source</a>`
+    if (daysSince(td.lastVerified) > 365) {
+      document.getElementById('td-staleness-warning').classList.add('calc-staleness-warning--visible')
+    }
+
+    const prime = TaxRates.primeLendingRate
+    document.getElementById('bd-rates-meta').innerHTML =
+      `Default rate last verified ${prime.lastVerified} · <a href="${prime.sourceUrl}" target="_blank" rel="noopener">SARB source</a>`
+  }
+  renderRatesMeta()
+
+  // Seed the bond calculator's default rate from tax-rates.js rather than
+  // a value hardcoded in this page.
+  document.getElementById('bd-rate').value = TaxRates.primeLendingRate.ratePct.toFixed(2)
 
   // ── Tabs ────────────────────────────────────────────────────────────────
   document.querySelectorAll('.calc-tab').forEach(tab => {
@@ -213,19 +272,10 @@
     return 'R' + Math.round(n).toLocaleString('en-ZA')
   }
 
-  // ── Transfer Duty (SARS 2025/26 brackets, natural persons) ────────────
-  // Source: SARS Transfer Duty Act rates effective 1 April 2025.
-  // Each bracket: { floor, rate } — duty is calculated marginally, i.e.
-  // only the portion of the price that falls within each bracket is taxed
-  // at that bracket's rate, same principle as income tax.
-  const TRANSFER_DUTY_BRACKETS = [
-    { floor: 0,          rate: 0.00 },
-    { floor: 1210000,    rate: 0.03 },
-    { floor: 1663800,    rate: 0.06 },
-    { floor: 2329300,    rate: 0.08 },
-    { floor: 2994800,    rate: 0.11 },
-    { floor: 13310000,   rate: 0.13 }
-  ]
+  // ── Transfer Duty (SARS brackets, natural persons) ────────────────────
+  // Rates come from js/tax-rates.js, not hardcoded here — see that file
+  // for how to update them when SARS changes the brackets.
+  const TRANSFER_DUTY_BRACKETS = TaxRates.transferDuty.brackets
 
   function calcTransferDuty (price) {
     let duty = 0
