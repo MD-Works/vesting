@@ -469,15 +469,17 @@ const App = (() => {
 
     // ── Inspection details ───────────────────────────────────────────────
     const typeLabel = { entry: 'Entry Inspection', exit: 'Exit Inspection', 'new-listing': 'New Listing Inspection', 'buyer-120': '120-Point Buyer Inspection' }
-    const details   = [
+    const isB120     = inspection.type === 'buyer-120'
+    const partyLabel = isB120 ? 'Buyer' : 'Tenant / Occupant'
+    const details    = [
       ['Property',        inspection.propertyAddress || '—'],
       ['Inspection Type', typeLabel[inspection.type] || inspection.type || '—'],
       ['Date',            inspection.date ? formatDate(inspection.date) : '—'],
       ['Agent',           inspection.agentName  || '—'],
-      ['Tenant / Occupant', inspection.tenantName || '—'],
-      ['Tenant Phone',    formatPhone(inspection.tenantPhone || '') || '—'],
-      ['Witness 1',       (inspection.witnessNames && inspection.witnessNames[0]) || '—'],
-      ['Witness 2',       (inspection.witnessNames && inspection.witnessNames[1]) || '—'],
+      [partyLabel,        inspection.tenantName || '—'],
+      [`${partyLabel} Phone`, formatPhone(inspection.tenantPhone || '') || '—'],
+      [isB120 ? 'Inspector' : 'Witness 1', (inspection.witnessNames && inspection.witnessNames[0]) || '—'],
+      ...(isB120 ? [] : [['Witness 2', (inspection.witnessNames && inspection.witnessNames[1]) || '—']]),
     ]
 
     doc.setFillColor(245, 240, 230)
@@ -748,13 +750,17 @@ const App = (() => {
       doc.line(ml, y + 1, pw - mr, y + 1)
       y += 8
 
-      const sigLabels = { agent:'Agent', tenant:'Tenant / Occupant', witness1:'Witness 1', witness2:'Witness 2' }
+      const isB120b   = inspection.type === 'buyer-120'
+      const sigLabels = isB120b
+        ? { agent: 'Agent', tenant: 'Buyer', witness1: 'Inspector' }
+        : { agent: 'Agent', tenant: 'Tenant / Occupant', witness1: 'Witness 1', witness2: 'Witness 2' }
       const sigW  = (tw - 5) / 2
       const sigH  = 25
       let   scol  = 0
 
       Object.entries(inspection.signatures).forEach(([key, dataUrl]) => {
         if (!dataUrl) return
+        if (!sigLabels[key]) return // e.g. witness2 on a buyer-120 report
         checkPage(sigH + 12)
         const x = ml + scol * (sigW + 5)
         doc.setDrawColor(...GOLD)

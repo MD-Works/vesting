@@ -263,21 +263,21 @@
           </div>
 
           <div class="form-group">
-            <label for="tenantName">Tenant / Occupant Name</label>
+            <label for="tenantName" id="label-tenantName">Tenant / Occupant Name</label>
             <input type="text" id="tenantName" placeholder="John Doe" />
           </div>
 
           <div class="form-group">
-            <label for="tenantPhone">Tenant Phone</label>
+            <label for="tenantPhone" id="label-tenantPhone">Tenant Phone</label>
             <input type="tel" id="tenantPhone" placeholder="+27 82 000 0000" />
           </div>
 
           <div class="form-group">
-            <label for="witness1">Witness 1</label>
+            <label for="witness1" id="label-witness1">Witness 1</label>
             <input type="text" id="witness1" placeholder="Full name" />
           </div>
 
-          <div class="form-group">
+          <div class="form-group" id="witness2-group">
             <label for="witness2">Witness 2 (optional)</label>
             <input type="text" id="witness2" placeholder="Full name" />
           </div>
@@ -351,7 +351,7 @@
           </div>
 
           <div class="sig-block">
-            <label>Tenant / Occupant Signature</label>
+            <label id="label-sig-tenant">Tenant / Occupant Signature</label>
             <canvas class="sig-canvas" id="sig-tenant" width="400" height="160"></canvas>
             <div class="sig-actions">
               <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('tenant')">Clear</button>
@@ -360,7 +360,7 @@
           </div>
 
           <div class="sig-block">
-            <label>Witness 1 Signature</label>
+            <label id="label-sig-witness1">Witness 1 Signature</label>
             <canvas class="sig-canvas" id="sig-witness1" width="400" height="160"></canvas>
             <div class="sig-actions">
               <button type="button" class="btn btn--ghost btn--sm" onclick="clearSig('witness1')">Clear</button>
@@ -368,7 +368,7 @@
             </div>
           </div>
 
-          <div class="sig-block">
+          <div class="sig-block" id="sig-witness2-block">
             <label>Witness 2 Signature <span class="text-muted">(optional)</span></label>
             <canvas class="sig-canvas" id="sig-witness2" width="400" height="160"></canvas>
             <div class="sig-actions">
@@ -801,6 +801,22 @@
     document.getElementById('meter-section').style.display = isB120 ? 'none' : ''
     document.getElementById('buyer120-section').style.display = isB120 ? '' : 'none'
     if (isB120) renderBuyer120()
+
+    // A buyer's due-diligence report doesn't have a tenant or move-in
+    // witnesses — relabel those fields to fit, and hide what genuinely
+    // doesn't apply (Witness 2 / its signature) rather than leaving
+    // tenancy-specific language on a property purchase report.
+    document.getElementById('label-tenantName').textContent  = isB120 ? 'Buyer Name'  : 'Tenant / Occupant Name'
+    document.getElementById('label-tenantPhone').textContent = isB120 ? 'Buyer Phone' : 'Tenant Phone'
+    document.getElementById('label-witness1').textContent    = isB120 ? 'Inspector Name' : 'Witness 1'
+    document.getElementById('witness2-group').style.display  = isB120 ? 'none' : ''
+
+    document.getElementById('label-sig-tenant').textContent   = isB120 ? 'Buyer Signature' : 'Tenant / Occupant Signature'
+    document.getElementById('label-sig-witness1').textContent = isB120 ? 'Inspector Signature' : 'Witness 1 Signature'
+    document.getElementById('sig-witness2-block').style.display = isB120 ? 'none' : ''
+
+    document.getElementById('tenantName').placeholder  = isB120 ? 'Jane Buyer' : 'John Doe'
+    document.getElementById('witness1').placeholder    = isB120 ? 'Full name of inspector' : 'Full name'
   }
 
   document.getElementById('type').addEventListener('change', toggleSectionsForType)
