@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#c9943c" />
+  <title>Calculators — Vesting</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .calc-tabs {
+      display: flex;
+      gap: var(--spacing-xs);
+      margin-bottom: var(--spacing-lg);
+      border-bottom: 1px solid var(--md-border-lt);
+    }
+    .calc-tab {
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--md-muted);
+      font-family: inherit;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .calc-tab--active { color: var(--md-gold-dk); border-bottom-color: var(--md-gold); }
+
+    .calc-panel { display: none; }
+    .calc-panel--active { display: block; }
+
+    .calc-result {
+      margin-top: var(--spacing-lg);
+    }
+    .calc-result__headline {
+      text-align: center;
+      padding: var(--spacing-lg);
+      background: linear-gradient(135deg, rgba(201,148,60,.12), rgba(201,148,60,.03));
+      border: 1px solid var(--md-border-lt);
+      border-radius: var(--md-radius);
+      margin-bottom: var(--spacing-md);
+    }
+    .calc-result__headline-label {
+      font-size: .78rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--md-muted);
+      margin-bottom: var(--spacing-xs);
+    }
+    .calc-result__headline-value {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--md-gold-dk);
+    }
+    .calc-breakdown {
+      display: grid;
+      gap: 1px;
+      background: var(--md-border-lt);
+      border: 1px solid var(--md-border-lt);
+      border-radius: var(--md-radius);
+      overflow: hidden;
+    }
+    .calc-breakdown__row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--spacing-sm) var(--spacing-md);
+      background: var(--md-surface);
+      font-size: .85rem;
+    }
+    .calc-breakdown__row--total {
+      font-weight: 700;
+      background: rgba(201,148,60,.06);
+    }
+    .calc-breakdown__label { color: var(--md-muted); }
+    .calc-breakdown__value { font-weight: 600; }
+
+    .calc-note {
+      font-size: .78rem;
+      color: var(--md-muted);
+      margin-top: var(--spacing-md);
+      line-height: 1.5;
+    }
+
+    .calc-share-btn { margin-top: var(--spacing-md); }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <nav id="vesting-nav"></nav>
+
+  <main class="page-content">
+
+    <header class="page-header">
+      <p class="page-header__eyebrow">Vesting · Tools</p>
+      <h1 class="page-header__title">Calculators</h1>
+      <p class="page-header__subtitle">Quick, offline estimates you can talk clients through on the spot.</p>
+    </header>
+
+    <div class="calc-tabs">
+      <button type="button" class="calc-tab calc-tab--active" data-tab="transfer-duty">Transfer Duty</button>
+      <button type="button" class="calc-tab" data-tab="bond">Bond Repayment</button>
+    </div>
+
+    <!-- ══════════════════ Transfer Duty ══════════════════ -->
+    <section class="calc-panel calc-panel--active" id="panel-transfer-duty">
+      <div class="form-section">
+        <h3 class="form-section__title">Property Purchase Price</h3>
+        <div class="form-grid">
+          <div class="form-group form-group--full">
+            <label for="td-price">Purchase Price (R)</label>
+            <input type="number" id="td-price" min="0" step="10000" placeholder="e.g. 2000000" inputmode="numeric" />
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-result" id="td-result" style="display:none;">
+        <div class="calc-result__headline">
+          <div class="calc-result__headline-label">Transfer Duty Payable</div>
+          <div class="calc-result__headline-value" id="td-total">R0</div>
+        </div>
+        <div class="calc-breakdown" id="td-breakdown"></div>
+        <p class="calc-note">
+          Based on SARS 2025/26 transfer duty brackets for natural persons (effective 1 April 2025).
+          Transfer duty is paid by the buyer to SARS via the transferring attorney, separately from
+          conveyancing and Deeds Office fees. Companies, CCs and trusts are taxed under the same table.
+          If the seller is a VAT-registered vendor, VAT applies instead of transfer duty. Always confirm
+          the current brackets on sars.gov.za, as rates are reviewed annually.
+        </p>
+        <button type="button" class="btn btn--whatsapp calc-share-btn" id="td-share-btn">
+          Share via WhatsApp
+        </button>
+      </div>
+    </section>
+
+    <!-- ══════════════════ Bond Repayment ══════════════════ -->
+    <section class="calc-panel" id="panel-bond">
+      <div class="form-section">
+        <h3 class="form-section__title">Loan Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="bd-amount">Loan Amount (R)</label>
+            <input type="number" id="bd-amount" min="0" step="10000" placeholder="e.g. 1800000" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label for="bd-rate">Interest Rate (% per year)</label>
+            <input type="number" id="bd-rate" min="0" max="30" step="0.05" value="10.50" inputmode="decimal" />
+          </div>
+          <div class="form-group">
+            <label for="bd-term">Loan Term (years)</label>
+            <select id="bd-term">
+              <option value="20">20 years</option>
+              <option value="25" selected>25 years</option>
+              <option value="30">30 years</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bd-deposit">Deposit (R, optional)</label>
+            <input type="number" id="bd-deposit" min="0" step="10000" placeholder="e.g. 200000" inputmode="numeric" />
+          </div>
+        </div>
+        <p class="calc-note">
+          Default rate reflects the SA prime lending rate as a starting point (10.50% as of mid-2026) — edit it
+          to match the client's actual quoted rate, since prime changes with each SARB MPC meeting and a bank's
+          rate to an individual is usually prime plus or minus a margin based on their risk profile.
+        </p>
+      </div>
+
+      <div class="calc-result" id="bd-result" style="display:none;">
+        <div class="calc-result__headline">
+          <div class="calc-result__headline-label">Estimated Monthly Repayment</div>
+          <div class="calc-result__headline-value" id="bd-monthly">R0</div>
+        </div>
+        <div class="calc-breakdown" id="bd-breakdown"></div>
+        <p class="calc-note">
+          Estimate only — excludes bond registration fees, initiation fees, and any life/homeowner's
+          insurance the bank requires as a condition of the loan. Confirm final figures with the client's
+          bank or bond originator.
+        </p>
+        <button type="button" class="btn btn--whatsapp calc-share-btn" id="bd-share-btn">
+          Share via WhatsApp
+        </button>
+      </div>
+    </section>
+
+    <footer id="vesting-footer"></footer>
+
+  </main>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/crypto.js"></script>
+<script src="js/app.js"></script>
+<script>
+;(async () => {
+
+  await App.init()
+
+  // ── Tabs ────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.calc-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.calc-tab').forEach(t => t.classList.remove('calc-tab--active'))
+      document.querySelectorAll('.calc-panel').forEach(p => p.classList.remove('calc-panel--active'))
+      tab.classList.add('calc-tab--active')
+      document.getElementById(`panel-${tab.dataset.tab}`).classList.add('calc-panel--active')
+    })
+  })
+
+  // ── Formatting helpers ─────────────────────────────────────────────────
+  function rands (n) {
+    return 'R' + Math.round(n).toLocaleString('en-ZA')
+  }
+
+  // ── Transfer Duty (SARS 2025/26 brackets, natural persons) ────────────
+  // Source: SARS Transfer Duty Act rates effective 1 April 2025.
+  // Each bracket: { floor, rate } — duty is calculated marginally, i.e.
+  // only the portion of the price that falls within each bracket is taxed
+  // at that bracket's rate, same principle as income tax.
+  const TRANSFER_DUTY_BRACKETS = [
+    { floor: 0,          rate: 0.00 },
+    { floor: 1210000,    rate: 0.03 },
+    { floor: 1663800,    rate: 0.06 },
+    { floor: 2329300,    rate: 0.08 },
+    { floor: 2994800,    rate: 0.11 },
+    { floor: 13310000,   rate: 0.13 }
+  ]
+
+  function calcTransferDuty (price) {
+    let duty = 0
+    const rows = []
+
+    for (let i = 0; i < TRANSFER_DUTY_BRACKETS.length; i++) {
+      const { floor, rate } = TRANSFER_DUTY_BRACKETS[i]
+      const nextFloor = TRANSFER_DUTY_BRACKETS[i + 1] ? TRANSFER_DUTY_BRACKETS[i + 1].floor : Infinity
+      if (price <= floor) break
+
+      const taxableInBracket = Math.min(price, nextFloor) - floor
+      const dutyInBracket     = taxableInBracket * rate
+
+      if (dutyInBracket > 0) {
+        rows.push({
+          label: rate === 0
+            ? `R0 – ${rands(nextFloor === Infinity ? price : nextFloor)} @ 0%`
+            : `${rands(floor)} – ${rands(nextFloor === Infinity ? price : nextFloor)} @ ${(rate * 100).toFixed(0)}%`,
+          value: dutyInBracket
+        })
+      }
+      duty += dutyInBracket
+    }
+
+    return { duty, rows }
+  }
+
+  function renderTransferDuty () {
+    const price = parseFloat(document.getElementById('td-price').value) || 0
+    const resultEl = document.getElementById('td-result')
+
+    if (price <= 0) { resultEl.style.display = 'none'; return }
+
+    const { duty, rows } = calcTransferDuty(price)
+
+    document.getElementById('td-total').textContent = rands(duty)
+    document.getElementById('td-breakdown').innerHTML = rows.length
+      ? rows.map(r => `
+          <div class="calc-breakdown__row">
+            <span class="calc-breakdown__label">${r.label}</span>
+            <span class="calc-breakdown__value">${rands(r.value)}</span>
+          </div>`).join('') + `
+          <div class="calc-breakdown__row calc-breakdown__row--total">
+            <span>Total Transfer Duty</span>
+            <span>${rands(duty)}</span>
+          </div>`
+      : `<div class="calc-breakdown__row">
+           <span class="calc-breakdown__label">No transfer duty payable — price is below the R1,210,000 threshold</span>
+         </div>`
+
+    resultEl.style.display = ''
+  }
+
+  document.getElementById('td-price').addEventListener('input', renderTransferDuty)
+
+  document.getElementById('td-share-btn').addEventListener('click', () => {
+    const price = parseFloat(document.getElementById('td-price').value) || 0
+    if (price <= 0) { App.toast('Enter a purchase price first.', 'warning'); return }
+    const { duty } = calcTransferDuty(price)
+    const agentName = sessionStorage.getItem('vesting_agent_name') || ''
+    const message =
+      `Hi! Here's the transfer duty estimate for a property at ${rands(price)}:\n\n` +
+      `Transfer Duty: ${rands(duty)}\n\n` +
+      `This is based on current SARS rates and excludes conveyancing/attorney fees. ` +
+      `Let me know if you'd like the full cost breakdown.` +
+      (agentName ? `\n\n${agentName}` : '')
+    App.whatsapp('', message)
+  })
+
+  // ── Bond repayment ───────────────────────────────────────────────────
+  function calcBondRepayment (principal, annualRatePct, years) {
+    const monthlyRate = (annualRatePct / 100) / 12
+    const n            = years * 12
+    if (monthlyRate === 0) return principal / n
+    const monthly = principal * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1)
+    return monthly
+  }
+
+  function renderBond () {
+    const amountRaw  = parseFloat(document.getElementById('bd-amount').value) || 0
+    const deposit    = parseFloat(document.getElementById('bd-deposit').value) || 0
+    const rate       = parseFloat(document.getElementById('bd-rate').value) || 0
+    const years      = parseInt(document.getElementById('bd-term').value, 10)
+    const principal  = Math.max(amountRaw - deposit, 0)
+    const resultEl   = document.getElementById('bd-result')
+
+    if (principal <= 0) { resultEl.style.display = 'none'; return }
+
+    const monthly     = calcBondRepayment(principal, rate, years)
+    const totalPaid    = monthly * years * 12
+    const totalInterest = totalPaid - principal
+
+    document.getElementById('bd-monthly').textContent = rands(monthly)
+    document.getElementById('bd-breakdown').innerHTML = `
+      <div class="calc-breakdown__row">
+        <span class="calc-breakdown__label">Loan Amount (after deposit)</span>
+        <span class="calc-breakdown__value">${rands(principal)}</span>
+      </div>
+      <div class="calc-breakdown__row">
+        <span class="calc-breakdown__label">Interest Rate</span>
+        <span class="calc-breakdown__value">${rate.toFixed(2)}% p.a.</span>
+      </div>
+      <div class="calc-breakdown__row">
+        <span class="calc-breakdown__label">Term</span>
+        <span class="calc-breakdown__value">${years} years</span>
+      </div>
+      <div class="calc-breakdown__row">
+        <span class="calc-breakdown__label">Total Interest Over Term</span>
+        <span class="calc-breakdown__value">${rands(totalInterest)}</span>
+      </div>
+      <div class="calc-breakdown__row calc-breakdown__row--total">
+        <span>Total Repaid</span>
+        <span>${rands(totalPaid)}</span>
+      </div>
+    `
+    resultEl.style.display = ''
+  }
+
+  ;['bd-amount', 'bd-rate', 'bd-term', 'bd-deposit'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderBond)
+    document.getElementById(id).addEventListener('change', renderBond)
+  })
+  renderBond() // show an initial estimate using the default rate if amount is pre-filled
+
+  document.getElementById('bd-share-btn').addEventListener('click', () => {
+    const amountRaw = parseFloat(document.getElementById('bd-amount').value) || 0
+    const deposit   = parseFloat(document.getElementById('bd-deposit').value) || 0
+    const rate      = parseFloat(document.getElementById('bd-rate').value) || 0
+    const years     = parseInt(document.getElementById('bd-term').value, 10)
+    const principal = Math.max(amountRaw - deposit, 0)
+    if (principal <= 0) { App.toast('Enter a loan amount first.', 'warning'); return }
+    const monthly = calcBondRepayment(principal, rate, years)
+    const agentName = sessionStorage.getItem('vesting_agent_name') || ''
+    const message =
+      `Hi! Here's a bond repayment estimate:\n\n` +
+      `Loan amount: ${rands(principal)}\n` +
+      `Rate: ${rate.toFixed(2)}% over ${years} years\n` +
+      `Estimated monthly repayment: ${rands(monthly)}\n\n` +
+      `This excludes bond registration and initiation fees — happy to help you get a formal quote from a bank or bond originator.` +
+      (agentName ? `\n\n${agentName}` : '')
+    App.whatsapp('', message)
+  })
+
+})()
+</script>
+
+</body>
+</html>

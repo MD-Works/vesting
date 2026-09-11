@@ -35,6 +35,7 @@ const App = (() => {
     { path: 'contacts.html',    label: 'Contacts',    icon: '◉' },
     { path: 'properties.html',  label: 'Properties',  icon: '⬡' },
     { path: 'inspections.html', label: 'Inspections', icon: '✓' },
+    { path: 'calculator.html',  label: 'Calculators', icon: '⌘' },
     { path: 'diary.html',       label: 'Diary',       icon: '◷' },
     { path: 'settings.html',    label: 'Settings',    icon: '⚙' }
   ]
