@@ -92,6 +92,7 @@
 
         <div class="flex gap-sm" style="flex-wrap:wrap;">
           <button type="button" class="btn btn--gold" id="btn-parse-import">Parse &amp; Pre-fill Form</button>
+          <button type="button" class="btn btn--ghost" id="btn-parse-ai" style="display:none;">🤖 Parse with AI</button>
           <button type="button" class="btn btn--ghost" id="btn-clear-import" style="display:none;">Clear</button>
         </div>
       </div>
@@ -579,6 +580,115 @@
     document.getElementById('import-url').value  = ''
     document.getElementById('import-text').value = ''
     document.getElementById('btn-clear-import').style.display = 'none'
+  })
+
+  // ── Parse with AI (optional — only shown if configured in Settings) ────────
+  App.aiIsConfigured().then(configured => {
+    if (configured) document.getElementById('btn-parse-ai').style.display = 'inline-flex'
+  })
+
+  async function callGroqChat (apiKey, model, messages, useJsonMode) {
+    const body = { model, temperature: 0.1, messages }
+    if (useJsonMode) body.response_format = { type: 'json_object' }
+    return fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(body)
+    })
+  }
+
+  async function aiParseListing (text, url, apiKey, model) {
+    const schema = {
+      price: 'string, e.g. "R 2 950 000" or "R 14 500 pm" for rentals — keep the R and spacing as written',
+      type: '"sale" or "rental"',
+      bedrooms: 'number of bedrooms as a string, e.g. "3"',
+      bathrooms: 'number of bathrooms as a string, e.g. "2" or "1.5"',
+      garages: 'number of garages/parking bays as a string',
+      size: 'floor size in square metres, plain number string, no units',
+      erfSize: 'erf/stand size in square metres, plain number string, no units',
+      propertyType: 'exactly one of: freestanding, townhouse, apartment, duplex, cluster, smallholding, vacant-land, commercial, industrial, farm',
+      suburb: 'suburb/area name only, no city or province',
+      webRef: 'the portal\'s listing reference number, if present',
+      levies: 'monthly levies as a string with R prefix, e.g. "R 850" — omit if not mentioned',
+      rates: 'monthly rates/taxes as a string with R prefix, e.g. "R 1 200" — omit if not mentioned',
+      description: 'a 2-4 sentence description of the property summarising the listing, in your own words'
+    }
+
+    const systemPrompt =
+      'You extract structured real estate listing data from raw pasted text copied from a South African ' +
+      'property portal (Property24, Private Property, or similar). Respond with ONLY a single valid JSON ' +
+      'object — no markdown, no code fences, no commentary before or after. Only include a key if you are ' +
+      'reasonably confident of its value from the given text; omit keys you cannot determine rather than ' +
+      `guessing. Use exactly this schema (all values are strings): ${JSON.stringify(schema)}`
+
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Listing URL (may be blank): ${url || '(none provided)'}\n\nListing text:\n${text}` }
+    ]
+
+    let res = await callGroqChat(apiKey, model, messages, true)
+    if (!res.ok && res.status === 400) {
+      // Some Groq models don't support JSON mode — retry once without it.
+      res = await callGroqChat(apiKey, model, messages, false)
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '')
+      throw new Error(`Groq API error (${res.status}). ${errBody.slice(0, 150)}`)
+    }
+
+    const json    = await res.json()
+    const content = json.choices?.[0]?.message?.content
+    if (!content) throw new Error('Empty response from the AI model.')
+
+    let parsed
+    try {
+      parsed = JSON.parse(content)
+    } catch {
+      // Some models wrap the JSON in code fences despite instructions.
+      parsed = JSON.parse(content.replace(/```json|```/g, '').trim())
+    }
+
+    if (url) parsed.sourceUrl = url
+    return parsed
+  }
+
+  document.getElementById('btn-parse-ai').addEventListener('click', async () => {
+    const url  = document.getElementById('import-url').value.trim()
+    const text = document.getElementById('import-text').value.trim()
+
+    if (!text) {
+      App.toast('Paste the full listing text first — AI parsing needs more than just a URL.', 'warning')
+      return
+    }
+
+    const btn = document.getElementById('btn-parse-ai')
+    btn.disabled = true
+    btn.textContent = 'Asking AI…'
+
+    try {
+      const [apiKey, model] = await Promise.all([App.aiGetApiKey(), App.aiGetModel()])
+      if (!apiKey || !model) throw new Error('AI Assistant not configured — set it up in Settings first.')
+
+      const parsed = await aiParseListing(text, url, apiKey, model)
+      const count  = applyParsedToForm(parsed)
+
+      if (count > 0) {
+        App.toast(`AI pre-filled ${count} field${count === 1 ? '' : 's'} — please review before saving.`, 'success', 6000)
+        document.getElementById('btn-clear-import').style.display = 'inline-flex'
+      } else {
+        App.toast('AI could not extract any fields — try "Parse & Pre-fill Form" instead.', 'warning', 6000)
+      }
+    } catch (err) {
+      console.error(err)
+      App.toast(err.message || 'AI parsing failed. Try "Parse & Pre-fill Form" instead.', 'danger', 7000)
+    } finally {
+      btn.disabled = false
+      btn.textContent = '🤖 Parse with AI'
+    }
   })
 
   // ── Constants ─────────────────────────────────────────────────────────────

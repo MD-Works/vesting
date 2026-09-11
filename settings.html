@@ -150,6 +150,39 @@
         <input type="file" id="restore-input" accept=".json" />
       </div>
 
+      <!-- 4. AI Assistant -->
+      <div class="form-section">
+        <h3 class="form-section__title">4. AI Assistant (Optional)</h3>
+        <div class="settings-warning">
+          ⚠ This is the one feature in Vesting that leaves your device. Enabling it sends pasted listing
+          text — and your API key, to authenticate — to Groq's servers over the internet. Everything else
+          in Vesting stays fully offline and encrypted locally. Use a free personal Groq key you don't mind
+          rotating if it's ever exposed, and never share it with anyone.
+        </div>
+        <div class="form-grid">
+          <div class="form-group form-group--full">
+            <label for="ai-api-key">Groq API Key</label>
+            <input type="password" id="ai-api-key" placeholder="gsk_…" autocomplete="off" />
+            <p class="text-sm text-muted" style="margin-top:4px;">
+              Free key from <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>.
+              Stored encrypted on this device with the same AES-256 used for the rest of your data.
+            </p>
+          </div>
+          <div class="form-group form-group--full">
+            <label for="ai-model">Model</label>
+            <select id="ai-model">
+              <option value="">Fetch available models first…</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-sm" style="flex-wrap:wrap;">
+          <button type="button" class="btn btn--ghost" id="btn-fetch-models">Fetch Available Models</button>
+          <button type="button" class="btn btn--gold" id="btn-save-ai">Save AI Settings</button>
+          <button type="button" class="btn btn--danger" id="btn-clear-ai" style="margin-left:auto;">Remove Key</button>
+        </div>
+        <p class="text-sm text-muted" id="ai-status" style="margin-top:var(--spacing-sm);"></p>
+      </div>
+
       <!-- 5. Help -->
       <div class="form-section">
         <h3 class="form-section__title">5. Help &amp; User Guide</h3>
@@ -256,7 +289,7 @@
   // ── Main settings ─────────────────────────────────────────────────────────
   async function showMainSettings() {
     document.getElementById('screen-settings').classList.remove('hidden')
-    await loadProfile(); await loadAbout(); showEncryptionStatus()
+    await loadProfile(); await loadAbout(); await loadAiSettings(); showEncryptionStatus()
   }
 
   async function loadProfile() {
@@ -279,6 +312,102 @@
     } catch { App.toast('Could not save profile.', 'danger') }
   })
   App.form.liveValidate('agent-email'); App.form.liveValidate('agent-phone')
+
+  // ── AI Assistant (Groq) ────────────────────────────────────────────────────
+  async function loadAiSettings () {
+    const hasKey = !!(await DB.getSetting('groqApiKey'))
+    const model  = await DB.getSetting('groqModel')
+
+    if (hasKey) {
+      document.getElementById('ai-api-key').placeholder = '•••• saved — enter a new key to replace it'
+      document.getElementById('ai-status').textContent = model
+        ? `AI Assistant configured ✓ (model: ${model})`
+        : 'API key saved — fetch models to pick one, then save again.'
+    } else {
+      document.getElementById('ai-status').textContent = 'AI Assistant not configured.'
+    }
+
+    if (model) {
+      document.getElementById('ai-model').innerHTML = `<option value="${model}" selected>${model}</option>`
+    }
+  }
+
+  async function getEffectiveApiKey () {
+    const typed = document.getElementById('ai-api-key').value.trim()
+    if (typed) return typed
+    return App.aiGetApiKey()
+  }
+
+  document.getElementById('btn-fetch-models').addEventListener('click', async () => {
+    const key = await getEffectiveApiKey()
+    if (!key) { App.toast('Enter your Groq API key first.', 'warning'); return }
+
+    const btn = document.getElementById('btn-fetch-models')
+    btn.disabled = true
+    btn.textContent = 'Fetching…'
+
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${key}` }
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      const json   = await res.json()
+      const models = (json.data || []).filter(m => m.active !== false)
+      if (!models.length) throw new Error('No models returned')
+
+      const currentSaved = await DB.getSetting('groqModel')
+      const select = document.getElementById('ai-model')
+      select.innerHTML = models
+        .map(m => `<option value="${m.id}" ${m.id === currentSaved ? 'selected' : ''}>${m.id}</option>`)
+        .join('')
+
+      App.toast(`Found ${models.length} available model${models.length === 1 ? '' : 's'}.`, 'success')
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not fetch models — check your API key and internet connection.', 'danger', 6000)
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Fetch Available Models'
+    }
+  })
+
+  document.getElementById('btn-save-ai').addEventListener('click', async () => {
+    const typedKey = document.getElementById('ai-api-key').value.trim()
+    const model    = document.getElementById('ai-model').value
+
+    try {
+      if (typedKey) {
+        const blob = await Crypto.encrypt(typedKey)
+        await DB.setSetting('groqApiKey', blob)
+        document.getElementById('ai-api-key').value = ''
+        document.getElementById('ai-api-key').placeholder = '•••• saved — enter a new key to replace it'
+      }
+      if (model) await DB.setSetting('groqModel', model)
+
+      await loadAiSettings()
+      App.toast('AI settings saved.', 'success')
+    } catch (err) {
+      console.error(err)
+      App.toast('Could not save AI settings.', 'danger')
+    }
+  })
+
+  document.getElementById('btn-clear-ai').addEventListener('click', async () => {
+    const confirmed = await App.confirm(
+      'Remove the saved Groq API key? AI-assisted parsing will be unavailable until you add a new key.',
+      'Remove', 'danger'
+    )
+    if (!confirmed) return
+
+    await DB.deleteSetting('groqApiKey')
+    await DB.deleteSetting('groqModel')
+    document.getElementById('ai-api-key').value = ''
+    document.getElementById('ai-api-key').placeholder = 'gsk_…'
+    document.getElementById('ai-model').innerHTML = '<option value="">Fetch available models first…</option>'
+    document.getElementById('ai-status').textContent = 'AI Assistant not configured.'
+    App.toast('API key removed.', 'success')
+  })
 
   function showEncryptionStatus() {
     const locked = !Crypto.isUnlocked()

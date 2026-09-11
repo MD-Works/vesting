@@ -793,6 +793,27 @@ const App = (() => {
     doc.save(`vesting-inspection-${addr}-${dateStr}.pdf`)
   }
 
+  // ── AI Assistant (Groq) ──────────────────────────────────────────────────
+  // The Groq API key is the one piece of data in Vesting that, once used,
+  // travels off the device to a third party. It's still stored encrypted at
+  // rest (same AES-256-GCM as everything else) via Crypto.encrypt/decrypt —
+  // just routed through DB.getSetting/setSetting since it's config, not a
+  // leads/properties/inspections record.
+  async function aiGetApiKey () {
+    const blob = await DB.getSetting('groqApiKey')
+    if (!blob) return null
+    try { return await Crypto.decrypt(blob) } catch { return null }
+  }
+
+  async function aiGetModel () {
+    return (await DB.getSetting('groqModel')) || null
+  }
+
+  async function aiIsConfigured () {
+    const [key, model] = await Promise.all([aiGetApiKey(), aiGetModel()])
+    return !!(key && model)
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
   return {
     init, toast, nav,
@@ -801,7 +822,8 @@ const App = (() => {
     timeGreeting, relativeTime, pluralise, truncate, debounce,
     validate, form, confirm,
     requireUnlock, statusBadge, emptyState,
-    generateInspectionPDF
+    generateInspectionPDF,
+    aiGetApiKey, aiGetModel, aiIsConfigured
   }
 
 })()
