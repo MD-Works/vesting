@@ -286,6 +286,7 @@
               <option value="apartment">Apartment / Flat</option>
               <option value="duplex">Duplex</option>
               <option value="cluster">Cluster</option>
+              <option value="share-block">Share Block</option>
               <option value="smallholding">Smallholding</option>
               <option value="vacant-land">Vacant Land</option>
               <option value="commercial">Commercial</option>
@@ -489,24 +490,46 @@
     if (/to\s?rent|for\s?rent|to\s?let/i.test(norm)) result.type = 'rental'
     else if (/for\s?sale/i.test(norm)) result.type = 'sale'
 
-    // Bedrooms / bathrooms / garages
-    const bedMatch = norm.match(/(\d+)\s*Bed(?:room)?s?\b/i)
-    if (bedMatch) result.bedrooms = bedMatch[1]
+    // Bedrooms / bathrooms / garages — Property24 uses two different layouts
+    // for the same data: a freeform phrase ("3 Bedroom House") near the top,
+    // and a structured "Label" / "Value" table further down (e.g.
+    // "Bathrooms" on one line, "2" on the next). Try the structured layout
+    // first since it's unambiguous when present, then fall back to the
+    // freeform phrase — and crucially, restrict the freeform match to the
+    // same line so a number from one field can't bleed across a blank line
+    // into an unrelated label below it.
+    function extractLabeledNumber (labelAlts) {
+      // Try the same-line freeform phrase first ("3 Bedrooms") — it's
+      // unambiguous and tightly bound when present. Only fall back to the
+      // structured "Label" / "Value" table layout (label then number on
+      // the next line, as in Property24's Property Overview section) when
+      // no freeform phrase exists — trying the structured pattern first
+      // risks it reaching past an unrelated label into the *next* field's
+      // number when the freeform layout is what's actually on the page.
+      let m = norm.match(new RegExp(`(\\d+(?:\\.\\d)?)[ \\t]*(?:${labelAlts})\\b`, 'i'))
+      if (m) return m[1]
+      m = norm.match(new RegExp(`(?:${labelAlts})\\s*[:\\n]\\s*(\\d+(?:\\.\\d)?)`, 'i'))
+      return m ? m[1] : null
+    }
 
-    const bathMatch = norm.match(/(\d+(?:\.\d)?)\s*Bath(?:room)?s?\b/i)
-    if (bathMatch) result.bathrooms = bathMatch[1]
+    const bedrooms = extractLabeledNumber('Bed(?:room)?s?')
+    if (bedrooms) result.bedrooms = bedrooms
 
-    const garageMatch = norm.match(/(\d+)\s*(?:Garages?|Parking\s?Bays?|Carports?)\b/i)
-    if (garageMatch) result.garages = garageMatch[1]
+    const bathrooms = extractLabeledNumber('Bath(?:room)?s?')
+    if (bathrooms) result.bathrooms = bathrooms
+
+    const garages = extractLabeledNumber('Garages?|Parking(?:\\s?Bays?)?|Carports?')
+    if (garages) result.garages = garages
 
     // Floor size / erf size (m²) — check labelled "Erf/Stand/Land Size" first
-    // so it isn't mistaken for floor size.
-    const erfMatch = norm.match(/(?:Erf|Stand|Land)\s?Size[:\s]*([\d,]+)\s?m²?/i)
-    if (erfMatch) result.erfSize = erfMatch[1].replace(/,/g, '')
+    // so it isn't mistaken for floor size. Same structured-then-freeform
+    // approach as bedrooms/bathrooms above.
+    let m = norm.match(/(?:Erf|Stand|Land)\s?Size\s*[:\n]\s*([\d,]+)\s?m²?/i)
+    if (m) result.erfSize = m[1].replace(/,/g, '')
 
-    const floorMatch = norm.match(/Floor\s?Size[:\s]*([\d,]+)\s?m²?/i)
-      || norm.match(/([\d,]+)\s?m²(?!\s*(?:erf|stand|land))/i)
-    if (floorMatch) result.size = floorMatch[1].replace(/,/g, '')
+    m = norm.match(/Floor\s?Size\s*[:\n]\s*([\d,]+)\s?m²?/i)
+      || norm.match(/([\d,]+)[ \t]?m²(?!\s*(?:erf|stand|land))/i)
+    if (m) result.size = m[1].replace(/,/g, '')
 
     // Property type keywords (order matters — more specific types checked first)
     const typeMap = [
@@ -514,6 +537,7 @@
       [/townhouse/i, 'townhouse'],
       [/duplex/i, 'duplex'],
       [/cluster/i, 'cluster'],
+      [/share\s?block/i, 'share-block'],
       [/smallholding/i, 'smallholding'],
       [/vacant\s?land|\bplot\b/i, 'vacant-land'],
       [/commercial/i, 'commercial'],
@@ -626,7 +650,7 @@
   }
 
   const VALID_PROPERTY_TYPES = [
-    'freestanding', 'townhouse', 'apartment', 'duplex', 'cluster',
+    'freestanding', 'townhouse', 'apartment', 'duplex', 'cluster', 'share-block',
     'smallholding', 'vacant-land', 'commercial', 'industrial', 'farm'
   ]
 
@@ -778,7 +802,7 @@
       garages: 'number of garages/parking bays as a string',
       size: 'floor size in square metres, plain number string, no units',
       erfSize: 'erf/stand size in square metres, plain number string, no units',
-      propertyType: 'exactly one of: freestanding, townhouse, apartment, duplex, cluster, smallholding, vacant-land, commercial, industrial, farm',
+      propertyType: 'exactly one of: freestanding, townhouse, apartment, duplex, cluster, share-block, smallholding, vacant-land, commercial, industrial, farm — use share-block specifically when the listing mentions "share block" ownership, common on the KZN South Coast',
       suburb: 'suburb/area name only, no city or province',
       webRef: 'the portal\'s listing reference number, if present',
       levies: 'monthly levies as a string with R prefix, e.g. "R 850" — omit if not mentioned',
@@ -864,7 +888,8 @@
     'Borehole', 'Generator', 'Fibre Internet', 'Flatlet / Granny Flat',
     'Staff Quarters', 'Braai / Boma Area', 'Covered Patio', 'Double Storey',
     'Study / Home Office', 'Laundry Room', 'Walk-in Closet', 'Scullery',
-    'Open Plan Living', 'Sea View', 'Mountain View', 'Pet Friendly', 'Garden'
+    'Open Plan Living', 'Sea View', 'Mountain View', 'Pet Friendly', 'Garden',
+    'Furnished'
   ]
 
   // ── State ─────────────────────────────────────────────────────────────────
