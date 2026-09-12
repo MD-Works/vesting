@@ -45,6 +45,40 @@
       font-size: .8rem;
       color: var(--md-muted);
     }
+
+    /* ── Import preview / review-before-apply ── */
+    .import-preview-engine {
+      font-size: .78rem;
+      color: var(--md-muted);
+      margin-bottom: var(--spacing-sm);
+    }
+    .import-preview-row {
+      border: 1px solid var(--md-border-lt);
+      border-radius: var(--md-radius);
+      padding: var(--spacing-sm);
+      margin-bottom: var(--spacing-sm);
+    }
+    .import-preview-row__check {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-size: .82rem;
+      font-weight: 600;
+      margin-bottom: var(--spacing-xs);
+      cursor: pointer;
+    }
+    .import-preview-row__check input { width: 16px; height: 16px; }
+    .import-preview-value {
+      width: 100%;
+      font-family: inherit;
+      font-size: .85rem;
+    }
+    .import-preview-row--unchecked .import-preview-value { opacity: .45; }
+    .import-preview-warning {
+      font-size: .74rem;
+      color: #d4a017;
+      margin-top: var(--spacing-xs);
+    }
   </style>
 </head>
 <body>
@@ -94,6 +128,21 @@
           <button type="button" class="btn btn--gold" id="btn-parse-import">Parse &amp; Pre-fill Form</button>
           <button type="button" class="btn btn--ghost" id="btn-parse-ai" style="display:none;">🤖 Parse with AI</button>
           <button type="button" class="btn btn--ghost" id="btn-clear-import" style="display:none;">Clear</button>
+        </div>
+
+        <div id="import-preview" style="display:none; margin-top:var(--spacing-md);">
+          <div class="divider" style="margin:var(--spacing-md) 0;">✦</div>
+          <h4 style="margin-bottom:4px;">Review Before Applying</h4>
+          <p class="import-preview-engine" id="import-preview-engine"></p>
+          <p class="text-sm text-muted mb-md">
+            Parsing text is never 100% reliable. Uncheck anything wrong, edit values directly if needed,
+            then apply only what you trust. Fields flagged ⚠ look unusual and deserve a closer look.
+          </p>
+          <div id="import-preview-rows"></div>
+          <div class="flex gap-sm" style="flex-wrap:wrap;">
+            <button type="button" class="btn btn--gold" id="btn-apply-parsed">Apply Selected Fields</button>
+            <button type="button" class="btn btn--ghost" id="btn-discard-parsed">Discard</button>
+          </div>
         </div>
       </div>
 
@@ -437,7 +486,7 @@
     if (priceMatch) result.price = priceMatch[0].trim()
 
     // Listing type
-    if (/to\s?rent|for\s?rent/i.test(norm)) result.type = 'rental'
+    if (/to\s?rent|for\s?rent|to\s?let/i.test(norm)) result.type = 'rental'
     else if (/for\s?sale/i.test(norm)) result.type = 'sale'
 
     // Bedrooms / bathrooms / garages
@@ -477,7 +526,7 @@
     }
 
     // Suburb — "3 Bedroom House For Sale in Ballito"
-    const suburbMatch = norm.match(/(?:For\s?Sale|To\s?Rent)\s+in\s+([A-Za-z0-9,'\-\s]{2,40}?)(?:[\n,.]|$)/i)
+    const suburbMatch = norm.match(/(?:For\s?Sale|To\s?Rent|To\s?Let)\s+in\s+([A-Za-z0-9,'\-\s]{2,40}?)(?:[\n,.]|$)/i)
     if (suburbMatch) result.suburb = suburbMatch[1].trim()
 
     // Web reference / listing number
@@ -556,6 +605,128 @@
     return count
   }
 
+  // ── Review-before-apply: neither parser is fully reliable, so nothing
+  // from either engine writes to the real form until the agent has seen
+  // each detected value, can uncheck/edit it, and explicitly applies it. ──
+  const IMPORT_FIELD_META = {
+    price:        { label: 'Price' },
+    type:         { label: 'Listing Type (sale / rental)' },
+    bedrooms:     { label: 'Bedrooms' },
+    bathrooms:    { label: 'Bathrooms' },
+    garages:      { label: 'Garages / Parking' },
+    size:         { label: 'Floor Size (m²)' },
+    erfSize:      { label: 'Erf Size (m²)' },
+    propertyType: { label: 'Property Type' },
+    suburb:       { label: 'Suburb' },
+    levies:       { label: 'Levies' },
+    rates:        { label: 'Rates' },
+    description:  { label: 'Description', multiline: true },
+    webRef:       { label: 'Web Ref (→ Internal Notes)' },
+    sourceUrl:    { label: 'Source URL (→ Internal Notes)' }
+  }
+
+  const VALID_PROPERTY_TYPES = [
+    'freestanding', 'townhouse', 'apartment', 'duplex', 'cluster',
+    'smallholding', 'vacant-land', 'commercial', 'industrial', 'farm'
+  ]
+
+  function importSanityWarning (key, rawValue) {
+    const num = parseFloat(String(rawValue).replace(/[^\d.]/g, ''))
+    switch (key) {
+      case 'price':
+        if (isNaN(num) || num < 50000 || num > 200000000) return 'Unusual price — double-check.'
+        break
+      case 'bedrooms':
+      case 'bathrooms':
+      case 'garages':
+        if (isNaN(num) || num < 0 || num > 20) return 'Unusually high/low — double-check.'
+        break
+      case 'size':
+      case 'erfSize':
+        if (isNaN(num) || num < 10 || num > 200000) return 'Size looks unusual — double-check.'
+        break
+      case 'propertyType':
+        if (!VALID_PROPERTY_TYPES.includes(rawValue)) return "Not a recognised property type — won't apply unless corrected."
+        break
+      case 'description':
+        if (String(rawValue).length < 30) return 'Very short — may have grabbed the wrong text.'
+        break
+    }
+    return null
+  }
+
+  function renderImportPreview (parsed, engineLabel) {
+    const wrap = document.getElementById('import-preview')
+    const rows = document.getElementById('import-preview-rows')
+    rows.innerHTML = ''
+
+    const entries = Object.entries(parsed).filter(([k, v]) => IMPORT_FIELD_META[k] && v)
+    if (!entries.length) {
+      wrap.style.display = 'none'
+      return false
+    }
+
+    entries.forEach(([key, value]) => {
+      const meta    = IMPORT_FIELD_META[key]
+      const warning = importSanityWarning(key, value)
+      const row     = document.createElement('div')
+      row.className = 'import-preview-row'
+      row.dataset.key = key
+
+      const escaped = String(value).replace(/"/g, '&quot;')
+      row.innerHTML = `
+        <label class="import-preview-row__check">
+          <input type="checkbox" class="import-preview-checkbox" />
+          <span>${meta.label}</span>
+        </label>
+        ${meta.multiline
+          ? `<textarea rows="3" class="import-preview-value">${value}</textarea>`
+          : `<input type="text" class="import-preview-value" value="${escaped}" />`}
+        ${warning ? `<p class="import-preview-warning">⚠ ${warning}</p>` : ''}
+      `
+
+      const checkbox = row.querySelector('.import-preview-checkbox')
+      const valueEl  = row.querySelector('.import-preview-value')
+      const syncDim  = () => row.classList.toggle('import-preview-row--unchecked', !checkbox.checked)
+      checkbox.addEventListener('change', syncDim)
+
+      // Fields with a sanity warning start unchecked, so a bad value can't
+      // slip through just because the agent trusted the "select all" habit.
+      checkbox.checked = !warning
+      syncDim()
+
+      rows.appendChild(row)
+    })
+
+    document.getElementById('import-preview-engine').textContent = `Parsed with: ${engineLabel}`
+    wrap.style.display = ''
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    return true
+  }
+
+  document.getElementById('btn-apply-parsed').addEventListener('click', () => {
+    const rows = document.querySelectorAll('#import-preview-rows .import-preview-row')
+    const toApply = {}
+    rows.forEach(row => {
+      const checkbox = row.querySelector('.import-preview-checkbox')
+      const valueEl   = row.querySelector('.import-preview-value')
+      if (checkbox.checked) toApply[row.dataset.key] = valueEl.value.trim()
+    })
+
+    const count = applyParsedToForm(toApply)
+    if (count > 0) {
+      App.toast(`Applied ${count} field${count === 1 ? '' : 's'} to the form — still worth a final look before saving.`, 'success', 6000)
+    } else {
+      App.toast('Nothing was checked, so nothing was applied.', 'warning')
+    }
+    document.getElementById('import-preview').style.display = 'none'
+    document.getElementById('btn-clear-import').style.display = 'inline-flex'
+  })
+
+  document.getElementById('btn-discard-parsed').addEventListener('click', () => {
+    document.getElementById('import-preview').style.display = 'none'
+  })
+
   document.getElementById('btn-parse-import').addEventListener('click', () => {
     const url  = document.getElementById('import-url').value.trim()
     const text = document.getElementById('import-text').value.trim()
@@ -566,12 +737,9 @@
     }
 
     const parsed = parseListingText(text, url)
-    const count  = applyParsedToForm(parsed)
+    const shown  = renderImportPreview(parsed, 'Regex parser (offline, no AI)')
 
-    if (count > 0) {
-      App.toast(`Pre-filled ${count} field${count === 1 ? '' : 's'} — please review before saving.`, 'success', 6000)
-      document.getElementById('btn-clear-import').style.display = 'inline-flex'
-    } else {
+    if (!shown) {
       App.toast("Couldn't detect any fields automatically — please fill the form manually.", 'warning', 6000)
     }
   })
@@ -579,6 +747,7 @@
   document.getElementById('btn-clear-import').addEventListener('click', () => {
     document.getElementById('import-url').value  = ''
     document.getElementById('import-text').value = ''
+    document.getElementById('import-preview').style.display = 'none'
     document.getElementById('btn-clear-import').style.display = 'none'
   })
 
@@ -674,12 +843,9 @@
       if (!apiKey || !model) throw new Error('AI Assistant not configured — set it up in Settings first.')
 
       const parsed = await aiParseListing(text, url, apiKey, model)
-      const count  = applyParsedToForm(parsed)
+      const shown  = renderImportPreview(parsed, `AI (${model})`)
 
-      if (count > 0) {
-        App.toast(`AI pre-filled ${count} field${count === 1 ? '' : 's'} — please review before saving.`, 'success', 6000)
-        document.getElementById('btn-clear-import').style.display = 'inline-flex'
-      } else {
+      if (!shown) {
         App.toast('AI could not extract any fields — try "Parse & Pre-fill Form" instead.', 'warning', 6000)
       }
     } catch (err) {
