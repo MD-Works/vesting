@@ -365,25 +365,37 @@
   const propsGrid  = document.getElementById('recent-properties-grid')
   const propsEmpty = document.getElementById('recent-properties-empty')
 
+  function esc (str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
   if (recentProps.length === 0) {
     propsGrid.classList.add('hidden')
     propsEmpty.classList.remove('hidden')
   } else {
     propsGrid.innerHTML = recentProps.map(prop => `
       <div class="property-card">
-        <div class="property-card__image">
+        <div class="property-card__image ${prop.sourceUrl ? 'property-card__image--linked' : ''}"
+             id="prop-img-wrap-${prop.id}"
+             ${prop.sourceUrl ? 'title="Open the live listing in a new tab"' : ''}>
           ${prop.photoIds && prop.photoIds.length > 0
-            ? `<img src="#" alt="${prop.address}" id="prop-img-${prop.id}" />`
+            ? `<img src="#" alt="${esc(prop.address)}" id="prop-img-${prop.id}" />`
             : `<span style="color:var(--md-muted);font-size:2rem;">⬡</span>`}
         </div>
         <div class="property-card__body">
-          <p class="property-card__address">${prop.address || '—'}, ${prop.suburb || ''}</p>
-          <p class="property-card__price">${prop.price || '—'}</p>
+          <p class="property-card__address">${esc(prop.address || '—')}${prop.suburb ? ', ' + esc(prop.suburb) : ''}</p>
+          <p class="property-card__price">${esc(prop.price || '—')}</p>
+          ${prop.sourceUrl
+            ? `<a href="${esc(prop.sourceUrl)}" target="_blank" rel="noopener" class="property-card__view-listing">🔗 View Listing ↗</a>`
+            : ''}
           <div class="property-card__meta">
-            ${prop.bedrooms  ? `<span>🛏 ${prop.bedrooms}</span>`  : ''}
-            ${prop.bathrooms ? `<span>🚿 ${prop.bathrooms}</span>` : ''}
-            ${prop.garages   ? `<span>🚗 ${prop.garages}</span>`   : ''}
-            ${prop.size      ? `<span>${prop.size}m²</span>`       : ''}
+            ${prop.bedrooms  ? `<span>🛏 ${esc(prop.bedrooms)}</span>`  : ''}
+            ${prop.bathrooms ? `<span>🚿 ${esc(prop.bathrooms)}</span>` : ''}
+            ${prop.garages   ? `<span>🚗 ${esc(prop.garages)}</span>`   : ''}
+            ${prop.size      ? `<span>${esc(prop.size)} m²</span>`       : ''}
+            ${prop.erfSize   ? `<span>Erf ${esc(prop.erfSize)} m²</span>` : ''}
           </div>
           ${App.statusBadge(prop.status || 'active')}
         </div>
@@ -405,6 +417,15 @@
           }
         } catch { /* photo not critical */ }
       }
+    })
+
+    // Wire "click image to open live listing" — same behaviour as the
+    // Properties page, attached via JS rather than an inline onclick
+    // string so a URL containing a stray quote can't break out of it.
+    recentProps.forEach(prop => {
+      if (!prop.sourceUrl) return
+      const wrap = document.getElementById(`prop-img-wrap-${prop.id}`)
+      if (wrap) wrap.addEventListener('click', () => window.open(prop.sourceUrl, '_blank', 'noopener'))
     })
   }
 
