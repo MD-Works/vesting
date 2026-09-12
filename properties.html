@@ -152,12 +152,17 @@
     // Render cards — then async-load first photo for each
     grid.innerHTML = filtered.map(p => `
       <div class="property-card" id="pcard-${p.id}">
-        <div class="property-card__image" id="pimg-wrap-${p.id}">
+        <div class="property-card__image ${p.sourceUrl ? 'property-card__image--linked' : ''}"
+             id="pimg-wrap-${p.id}"
+             ${p.sourceUrl ? 'title="Open the live listing in a new tab"' : ''}>
           <span style="color:var(--md-muted);font-size:2.5rem;">⬡</span>
         </div>
         <div class="property-card__body">
           <p class="property-card__address">${esc(p.address || '—')}${p.suburb ? ', ' + esc(p.suburb) : ''}</p>
           <p class="property-card__price">${esc(p.price || '—')}</p>
+          ${p.sourceUrl
+            ? `<a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" class="property-card__view-listing">🔗 View Listing ↗</a>`
+            : ''}
           <div class="property-card__meta">
             ${p.bedrooms  ? `<span>🛏 ${p.bedrooms}</span>`   : ''}
             ${p.bathrooms ? `<span>🚿 ${p.bathrooms}</span>`  : ''}
@@ -200,6 +205,15 @@
           }
         } catch { /* non-critical */ }
       }
+    })
+
+    // Wire "click image to open live listing" — attached via JS rather than
+    // an inline onclick string so a URL containing a stray quote can't break
+    // out of the attribute.
+    filtered.forEach(p => {
+      if (!p.sourceUrl) return
+      const wrap = document.getElementById(`pimg-wrap-${p.id}`)
+      if (wrap) wrap.addEventListener('click', () => window.open(p.sourceUrl, '_blank', 'noopener'))
     })
   }
 

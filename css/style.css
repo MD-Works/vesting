@@ -909,6 +909,25 @@ tbody td {
   margin-bottom: var(--spacing-sm);
 }
 
+.property-card__image--linked {
+  cursor: pointer;
+}
+
+.property-card__view-listing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .74rem;
+  font-weight: 600;
+  color: var(--md-gold-lt);
+  text-decoration: none;
+  margin-bottom: var(--spacing-sm);
+}
+
+.property-card__view-listing:hover {
+  text-decoration: underline;
+}
+
 .property-card__meta {
   display:    flex;
   gap:        var(--spacing-md);

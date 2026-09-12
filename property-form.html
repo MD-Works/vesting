@@ -269,6 +269,15 @@
             <input type="text" id="deposit" placeholder="R 30 000" />
           </div>
 
+          <div class="form-group form-group--full">
+            <label for="sourceUrl">Online Listing URL (optional)</label>
+            <input type="url" id="sourceUrl" placeholder="https://www.property24.com/for-sale/..." />
+            <p class="text-sm text-muted" style="margin-top:4px;">
+              If this property is also listed on Property24 or another portal, add the link here — it'll
+              show as "View Listing" on the property card so you can jump straight to the live listing.
+            </p>
+          </div>
+
         </div>
       </div>
 
@@ -613,16 +622,13 @@
     if (parsed.levies)      setVal('levies', parsed.levies)
     if (parsed.rates)       setVal('rates', parsed.rates)
     if (parsed.description) setVal('description', parsed.description)
+    if (parsed.sourceUrl)   setVal('sourceUrl', parsed.sourceUrl)
 
-    // No dedicated "source URL" field on the form yet — fold the reference
-    // and link into internal notes so it isn't lost, agent can promote it
-    // to a real field later if that turns out to matter.
-    const noteParts = []
-    if (parsed.webRef)    noteParts.push(`Web Ref: ${parsed.webRef}`)
-    if (parsed.sourceUrl) noteParts.push(`Source listing: ${parsed.sourceUrl}`)
-    if (noteParts.length) {
+    // No dedicated field for the portal's own reference number — fold that
+    // into internal notes so it isn't lost.
+    if (parsed.webRef) {
       const notesEl = document.getElementById('internalNotes')
-      notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + noteParts.join('\n')
+      notesEl.value = (notesEl.value ? notesEl.value + '\n' : '') + `Web Ref: ${parsed.webRef}`
       count++
     }
 
@@ -646,7 +652,7 @@
     rates:        { label: 'Rates' },
     description:  { label: 'Description', multiline: true },
     webRef:       { label: 'Web Ref (→ Internal Notes)' },
-    sourceUrl:    { label: 'Source URL (→ Internal Notes)' }
+    sourceUrl:    { label: 'Online Listing URL' }
   }
 
   const VALID_PROPERTY_TYPES = [
@@ -960,7 +966,7 @@
     const textFields = [
       'address','suburb','city','erfNumber','assignedAgent',
       'price','levies','rates','deposit','otherFeatures',
-      'description','internalNotes',
+      'description','internalNotes','sourceUrl',
       'ownerName','ownerPhone','ownerEmail','showingInstructions'
     ]
     textFields.forEach(f => {
@@ -1184,6 +1190,7 @@
       levies:              document.getElementById('levies').value.trim(),
       rates:               document.getElementById('rates').value.trim(),
       deposit:             document.getElementById('deposit').value.trim(),
+      sourceUrl:           document.getElementById('sourceUrl').value.trim(),
       propertyType:        document.getElementById('propertyType').value,
       bedrooms:            document.getElementById('bedrooms').value,
       bathrooms:           document.getElementById('bathrooms').value,
