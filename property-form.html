@@ -113,7 +113,7 @@
 
         <div class="form-grid">
           <div class="form-group form-group--full">
-            <label for="import-url">Listing URL (optional)</label>
+            <label for="import-url">Paste Listing URL Here (used to fill the form below)</label>
             <input type="url" id="import-url" placeholder="https://www.property24.com/for-sale/..." />
           </div>
 
@@ -749,6 +749,12 @@
     } else {
       App.toast('Nothing was checked, so nothing was applied.', 'warning')
     }
+
+    // The scratch URL box has done its job once applied — its value now
+    // lives in the real "Online Listing URL" field below, so leaving it
+    // filled here just shows the same URL twice for no reason.
+    document.getElementById('import-url').value = ''
+
     document.getElementById('import-preview').style.display = 'none'
     document.getElementById('btn-clear-import').style.display = 'inline-flex'
   })
